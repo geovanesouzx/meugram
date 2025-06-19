@@ -21,6 +21,8 @@
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
         .modal-content { animation: slideUp 0.3s ease-out; }
         @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .like-heart { transition: transform 0.2s ease, color 0.2s; }
+        .like-heart:active { transform: scale(1.25); }
     </style>
 </head>
 <body class="overflow-hidden">
@@ -49,7 +51,7 @@
                 <svg width="24" height="24" viewBox="0 0 24 24" class="text-white"><path fill="currentColor" d="M16 17v-3H9v-4h7V7l5 5-5 5M14 2a2 2 0 0 1 2 2v2h-2V4H5v16h9v-2h2v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9z"></path></svg>
             </button>
         </header>
-        <main id="postsFeed" class="p-2 space-y-4">
+        <main id="postsFeed" class="p-0 sm:p-2 space-y-4">
              <div id="loadingPosts" class="text-center text-slate-500 py-10">
                 <p>A carregar o feed...</p>
             </div>
@@ -159,8 +161,7 @@
             const provider = new GoogleAuthProvider();
             try {
                 await signInWithPopup(auth, provider);
-            } catch (error)
-            {
+            } catch (error) {
                 console.error("Erro no login com Google:", error);
                 alert("Ocorreu um erro ao tentar fazer login com o Google. Verifique se os pop-ups estão bloqueados ou tente novamente. Detalhes no console.");
             }
@@ -229,11 +230,11 @@
             });
         }
         
-        async function renderPost(postDoc) {
+        function renderPost(postDoc) {
             const post = { id: postDoc.id, ...postDoc.data() };
             const postsFeed = document.getElementById('postsFeed');
             const postElement = document.createElement('div');
-            postElement.className = 'bg-black border-b border-slate-800 fade-in';
+            postElement.className = 'bg-black sm:rounded-xl border-b sm:border border-slate-800 fade-in';
         
             const hasLiked = post.likes?.includes(userId);
             const likeCount = post.likes?.length || 0;
@@ -247,13 +248,16 @@
                 <div class="p-4 pt-0 text-white text-base break-words">
                     <p>${escapeHTML(post.text)}</p>
                 </div>
-                <div class="px-3 pt-2 pb-1 flex items-center justify-between">
+                <div class="px-3 py-2 flex items-center justify-between">
                     <div class="flex items-center gap-4">
                         <button class="like-button">
                             <svg class="like-heart" width="24" height="24" viewBox="0 0 24 24" fill="${hasLiked ? '#ff0055' : 'none'}" stroke="${hasLiked ? '#ff0055' : 'currentColor'}" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
                         </button>
                         <button class="comment-button">
                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                        </button>
+                        <button class="share-button">
+                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                         </button>
                     </div>
                 </div>
@@ -266,6 +270,7 @@
             
             postElement.querySelector('.like-button').addEventListener('click', () => toggleLike(post.id));
             postElement.querySelector('.comment-button').addEventListener('click', () => toggleComments(post.id));
+            postElement.querySelector('.share-button').addEventListener('click', () => alert('Funcionalidade de partilha a ser implementada!'));
 
             postsFeed.appendChild(postElement);
         }
@@ -353,22 +358,3 @@
     </script>
 </body>
 </html>
-```
-
-### Sobre o Login com o Google
-
-Se o login com o Google ainda não funcionar depois de atualizar o código, a causa é quase sempre uma destas duas coisas (que **precisam ser feitas no site do Firebase**):
-
-1.  **Login com Google não está ativado:**
-    * Vá à [Consola do Firebase](https://console.firebase.google.com/).
-    * Selecione o seu projeto (`meugram-ebbaa`).
-    * No menu à esquerda, vá a **Build > Authentication**.
-    * Clique no separador **Sign-in method**.
-    * Na lista, clique em **Google**, ative-o e certifique-se de que seleciona um email de suporte do projeto. Clique em **Guardar**.
-
-2.  **O seu domínio não está autorizado:**
-    * Ainda em **Authentication**, no separador **Settings**, vá para a secção **Domínios autorizados**.
-    * Clique em **Adicionar domínio**.
-    * Se estiver a usar o GitHub Pages, o domínio a adicionar será `oseunome.github.io` (substitua "oseunome" pelo seu nome de utilizador do GitHub).
-
-Depois de verificar estes dois pontos no Firebase e atualizar o seu `index.html` com o código acima, a aplicação deverá funcionar por comple
