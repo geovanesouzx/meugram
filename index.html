@@ -1,0 +1,2449 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Ssnake!!</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400..900&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos gerais e de reset */
+        :root {
+            --primary-color: #1a0c2e;
+            --secondary-color: #2a1a4a;
+            --accent-color: #ff00ff; /* Magenta */
+            --food-color: #00ffff;    /* Ciano */
+            --apple-color-dark: #c0392b;
+            --apple-color-light: #e74c3c;
+            --apple-stem-color: #6D4C41;
+            --apple-leaf-color: #27ae60;
+            --text-color: #f0e6ff;
+            --font-family: 'Orbitron', sans-serif;
+            --glow-color: rgba(255, 0, 255, 0.7);
+            --food-glow: rgba(231, 76, 60, 0.7); /* Brilho avermelhado */
+            --cyan-glow: rgba(0, 255, 255, 0.7);  /* Brilho ciano para UI */
+            --golden-apple-glow: rgba(255, 215, 0, 0.8);
+            --green-apple-glow: rgba(46, 204, 113, 0.8);
+            --blue-apple-glow: rgba(52, 152, 219, 0.8);
+            --purple-apple-glow: rgba(155, 89, 182, 0.8);
+            /* New Apple Glows */
+            --multiplier-apple-glow: rgba(255, 165, 0, 0.8); /* Orange glow for Multiplier */
+            --ghost-apple-glow: rgba(240, 240, 240, 0.7); /* Light grey/white for Ghost */
+            --reverse-apple-glow: rgba(75, 0, 130, 0.7); /* Dark blue/purple for Reverse */
+
+
+            --difficulty-easy: #2ecc71; /* Green */
+            --difficulty-medium: #3498db; /* Blue */
+            --difficulty-hard: #f1c40f; /* Yellow */
+            --difficulty-epic: #9b59b6; /* Purple */
+            --difficulty-extreme: #e74c3c; /* Red */
+            --difficulty-hardcore: #8b0000; /* Dark Red for Hardcore */
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--primary-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+            transition: all 0.5s ease;
+        }
+
+        /* Fundos */
+        .background-default::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(to right, rgba(0, 255, 255, 0.2) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0, 255, 255, 0.2) 1px, transparent 1px);
+            background-size: 40px 40px; animation: moveGrid 20s linear infinite;
+            transform: perspective(300px) rotateX(60deg); z-index: -1;
+        }
+        
+        .background-sunset::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(#3a1c71, #d76d77, #ffaf7b); z-index: -1;
+        }
+        
+        .background-pulse::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: radial-gradient(circle at center, rgba(0, 255, 255, 0.3) 0, transparent 60%);
+            animation: pulse 4s infinite; z-index: -1;
+        }
+        
+        .background-matrix::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; color: #0F0; font-family: monospace; font-size: 1rem;
+            animation: fall 100s linear infinite;
+            background-image:
+                radial-gradient(rgba(0, 128, 0, 0.2) 1px, transparent 1px),
+                radial-gradient(rgba(0, 128, 0, 0.2) 1px, transparent 1px);
+            background-position: 0 0, 25px 25px; background-size: 50px 50px; z-index: -1;
+        }
+
+        .background-nebula::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(45deg, #3a1c71, #000033, #3a1c71, #d76d77, #ffaf7b, #000033);
+            background-size: 400% 400%; animation: nebulaFlow 20s ease infinite; z-index: -1;
+        }
+
+        .background-wavy::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image:
+                radial-gradient(circle at 100% 100%, transparent 20px, var(--secondary-color) 21px, var(--secondary-color) 30px, transparent 31px),
+                radial-gradient(circle at 0% 0%, transparent 20px, var(--secondary-color) 21px, var(--secondary-color) 30px, transparent 31px);
+            background-color: var(--primary-color);
+            background-size: 60px 60px; animation: moveWaves 10s linear infinite; z-index: -1;
+        }
+        
+        .background-hexagons::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--primary-color) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cg fill-rule='evenodd'%3E%3Cg id='hexagons' fill='%232a1a4a' fill-opacity='0.4' fill-rule='nonzero'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.99-7.5L26 15v18.5l-13 7.5L0 33.5V15z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            animation: moveHex 30s linear infinite; z-index: -1;
+        }
+
+        .background-stars::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%); z-index: -2;
+        }
+        .background-stars::after {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('https://www.transparenttextures.com/patterns/stardust.png');
+            animation: moveStars 50s linear infinite; z-index: -1;
+        }
+
+        .background-aurora::before {
+            content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0;
+            background: linear-gradient(-45deg, #00ff99, #00ccff, #9933ff, #ff33cc);
+            background-size: 400% 400%; animation: aurora 15s ease infinite; z-index: -1;
+        }
+
+        .background-tunnel::before {
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #000;
+            background-image: radial-gradient(circle, var(--secondary-color) 2px, transparent 2px);
+            background-size: 25px 25px;
+            animation: zoomTunnel 10s linear infinite;
+            z-index: -1;
+        }
+
+        .background-circuit::before {
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #01040a;
+            background-image: linear-gradient(var(--accent-color) 1px, transparent 1px), linear-gradient(90deg, var(--accent-color) 1px, transparent 1px);
+            background-size: 40px 40px;
+            animation: moveCircuit 3s linear infinite;
+            opacity: 0.3;
+            z-index: -1;
+        }
+        
+        .background-forcefield::before {
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, transparent 70%, var(--accent-color) 100%);
+            animation: forceField 5s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        .background-liquid::before {
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(45deg, #2a1a4a, #ff00ff, #00ffff);
+            background-size: 200% 200%;
+            animation: liquidFlow 10s ease infinite;
+            z-index: -1;
+        }
+        /* NEW BACKGROUNDS STYLES */
+        .background-cosmic_dream::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%),
+                        radial-gradient(at top left, rgba(155, 89, 182, 0.3) 0%, transparent 50%),
+                        radial-gradient(at bottom right, rgba(52, 152, 219, 0.3) 0%, transparent 50%);
+            animation: nebulaFlow 25s linear infinite alternate;
+            z-index: -1;
+        }
+        .background-forest_glow::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at center, #1e3a2c 0%, #0a1612 100%);
+            animation: pulse 10s ease-in-out infinite alternate;
+            z-index: -1;
+            /* Simple glowing dots */
+            background-image: radial-gradient(circle, rgba(0, 255, 0, 0.2) 1px, transparent 1px),
+                              radial-gradient(circle, rgba(0, 255, 0, 0.2) 1px, transparent 1px);
+            background-size: 30px 30px, 45px 45px;
+            background-position: 0 0, 15px 15px;
+        }
+        .background-cyber_grid::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #000;
+            background-image: linear-gradient(0deg, rgba(0,255,255,0.1) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(0,255,255,0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            animation: moveGrid 5s linear infinite;
+            z-index: -1;
+        }
+        .background-lava_flow::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #FF4500, #FFD700, #FF6347);
+            background-size: 400% 400%;
+            animation: liquidFlow 12s ease infinite;
+            z-index: -1;
+        }
+        .background-starry_night::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            background-image: radial-gradient(circle, rgba(255,255,255,0.8) 1px, transparent 1px),
+                              radial-gradient(circle, rgba(255,255,255,0.6) 1px, transparent 1px);
+            background-size: 50px 50px, 100px 100px;
+            animation: moveStars 100s linear infinite;
+            z-index: -1;
+        }
+        .background-ocean_depths::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, #001f3f, #0074d9, #001f3f);
+            animation: liquidFlow 15s ease infinite alternate;
+            z-index: -1;
+        }
+        .background-desert_dunes::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to top, #c0392b, #e74c3c, #f39c12);
+            animation: nebulaFlow 20s ease infinite alternate; /* Reusing for heat haze effect */
+            z-index: -1;
+        }
+        .background-retro_grid::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to top, #330033, #660066, #990099);
+            background-image: linear-gradient(to right, rgba(255, 0, 255, 0.2) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255, 0, 255, 0.2) 1px, transparent 1px);
+            background-size: 25px 25px;
+            animation: moveGrid 15s linear infinite;
+            z-index: -1;
+        }
+        /* New custom backgrounds (10 total now) */
+        .background-stardust_swirl::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(ellipse at bottom, #0A0A0A 0%, #1A0C2E 100%);
+            background-image: radial-gradient(circle at 10% 20%, rgba(100, 100, 255, 0.1) 0%, transparent 50%),
+                              radial-gradient(circle at 90% 80%, rgba(255, 100, 100, 0.1) 0%, transparent 50%);
+            animation: nebulaFlow 30s ease infinite alternate;
+            z-index: -1;
+        }
+        .background-mystic_glade::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at center, #0F2027 0%, #203A43 100%);
+            background-image: radial-gradient(circle, rgba(0, 150, 0, 0.1) 1px, transparent 1px),
+                              radial-gradient(circle, rgba(0, 200, 0, 0.1) 1px, transparent 1px);
+            background-size: 40px 40px, 60px 60px;
+            animation: moveHex 40s linear infinite;
+            z-index: -1;
+        }
+        .background-neon_cityscape::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            background-image: linear-gradient(0deg, rgba(0,255,255,0.2) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255,0,255,0.2) 1px, transparent 1px);
+            background-size: 30px 30px;
+            animation: moveCircuit 10s linear infinite alternate;
+            z-index: -1;
+        }
+        .background-deep_sea_current::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to top, #000033, #001f3f, #004d99);
+            background-image: radial-gradient(circle, rgba(0, 150, 255, 0.1) 1px, transparent 1px),
+                              radial-gradient(circle, rgba(0, 100, 200, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            animation: liquidFlow 20s ease infinite;
+            z-index: -1;
+        }
+        .background-solar_flame::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #FF6347, #FF4500, #FFD700);
+            background-size: 300% 300%;
+            animation: nebulaFlow 10s ease infinite alternate;
+            z-index: -1;
+        }
+        .background-pixel_forest::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #2b580c; /* Dark green */
+            background-image: linear-gradient(0deg, rgba(0,200,0,0.3) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(0,200,0,0.3) 1px, transparent 1px);
+            background-size: 10px 10px;
+            animation: moveGrid 20s linear infinite reverse;
+            z-index: -1;
+        }
+        .background-ice_caverns::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, #add8e6, #87ceeb, #4682b4); /* Light to dark blue */
+            background-image: radial-gradient(circle, rgba(255,255,255,0.4) 1px, transparent 1px);
+            background-size: 30px 30px;
+            animation: pulse 15s ease-in-out infinite;
+            z-index: -1;
+        }
+        .background-volcanic_ash::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to top, #36454F, #232B2B, #1C1C1C); /* Charcoal to dark grey */
+            background-image: radial-gradient(circle, rgba(255,69,0,0.2) 1px, transparent 1px),
+                              radial-gradient(circle, rgba(255,140,0,0.2) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: fall 25s linear infinite;
+            z-index: -1;
+        }
+        .background-dream_weave::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(45deg, #e6e6fa, #dda0dd, #ba55d3); /* Lavender, plum, medium orchid */
+            background-size: 300% 300%;
+            animation: aurora 20s ease infinite alternate;
+            z-index: -1;
+        }
+        .background-quantum_foam::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, #000 0%, #1a0c2e 100%);
+            background-image: radial-gradient(circle, rgba(0,255,255,0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            animation: zoomTunnel 15s linear infinite reverse;
+            z-index: -1;
+        }
+
+
+        .hidden { display: none !important; }
+
+        /* Animações */
+        @keyframes moveGrid { from { background-position: 0 0; } to { background-position: 0 -100vh; } }
+        @keyframes pulse { 0% { transform: scale(0.8); opacity: 0.5; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(0.8); opacity: 0.5; } }
+        @keyframes moveWaves { from { background-position: 0 0; } to { background-position: 120px 60px; } }
+        @keyframes moveHex { from { background-position: 0 0; } to { background-position: 200% 0; } }
+        @keyframes moveStars { from { background-position: 0 0; } to { background-position: -10000px 5000px; } }
+        @keyframes fall { to { background-position: 0 100vh; } }
+        @keyframes nebulaFlow { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes popIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+        @keyframes ring { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(1.8); opacity: 0; } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+        @keyframes aurora { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        @keyframes zoomTunnel { from { background-size: 25px 25px; opacity: 1; } to { background-size: 200px 200px; opacity: 0; } }
+        @keyframes moveCircuit { from { background-position: 0 0; } to { background-position: 80px 80px; } }
+        @keyframes forceField { 0%, 100% { transform: scale(1); opacity: 0.2; } 50% { transform: scale(1.1); opacity: 0.4; } }
+        @keyframes liquidFlow { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        .shake { animation: shake 0.3s ease; }
+
+        /* Estrutura e UI */
+        .game-container {
+            width: 95vw; height: 95vh; max-width: 600px; max-height: 800px;
+            background-color: rgba(42, 26, 74, 0.5); backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 0, 255, 0.2);
+            border-radius: 20px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            position: relative; padding: 20px;
+        }
+        
+        .screen {
+            width: 100%; height: 100%; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; text-align: center;
+            animation: fadeIn 0.8s ease-out; position: relative; 
+        }
+
+        h1, h2 { font-weight: 700; text-shadow: 0 0 10px var(--glow-color), 0 0 20px var(--glow-color); }
+        #start-screen h1 { font-size: 3.5rem; color: var(--accent-color); margin-bottom: 20px; }
+
+        #start-screen .menu-button {
+            width: 280px; box-sizing: border-box; display: flex;
+            justify-content: center; align-items: center;
+        }
+
+        #notification-bell {
+            position: absolute; top: 0; right: 0; width: 40px; height: 40px;
+            cursor: pointer; color: var(--text-color);
+        }
+        
+        #notification-dot {
+            width: 12px; height: 12px; background-color: #ff3366; border-radius: 50%;
+            position: absolute; top: 0; right: 0; border: 2px solid var(--primary-color);
+        }
+        
+#notification-dot::after {
+            content: ''; position: absolute; top: -4px; left: -4px; right: -4px; bottom: -4px;
+            border-radius: 50%; border: 2px solid #ff3366; animation: ring 1.5s infinite;
+        }
+
+        .user-profile { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+        .user-profile img { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--accent-color); }
+        .user-profile span { font-size: 1rem; }
+
+        .menu-button {
+            font-family: var(--font-family); background: linear-gradient(45deg, var(--accent-color), #b300b3);
+            color: #fff; border: none; padding: 15px 35px; font-size: 1rem; font-weight: 700;
+            cursor: pointer; border-radius: 8px; transition: all 0.2s ease-out;
+            margin: 5px; box-shadow: 0 0 15px rgba(255, 0, 255, 0.3), inset 0 0 5px rgba(255,255,255,0.3);
+            text-transform: uppercase;
+        }
+        
+        .menu-button:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 0 25px var(--glow-color), inset 0 0 8px rgba(255,255,255,0.4);
+        }
+        
+        .menu-button.active, .menu-button:disabled {
+            background: var(--food-color); color: var(--primary-color);
+            box-shadow: 0 0 20px var(--cyan-glow); cursor: not-allowed; opacity: 0.7;
+        }
+
+        #login-button {
+            background: #fff; color: #444; display: flex; align-items: center;
+            gap: 10px; padding: 10px 20px;
+        }
+        #login-button:hover { box-shadow: 0 0 25px #fff; }
+        #login-button svg { width: 24px; height: 24px; }
+
+        #options-screen, #leaderboard-screen, #tips-screen, #notification-screen, #shop-screen, #achievements-screen {
+            justify-content: space-between;
+        }
+        
+        #options-screen h2, #leaderboard-screen h2, #tips-screen h2, #notification-screen h2, #shop-screen h2, #username-screen h2, #achievements-screen h2 {
+            font-size: 2.5rem; color: var(--accent-color); margin-bottom: 20px; flex-shrink: 0;
+        }
+
+        .scrollable-content { overflow-y: auto; padding: 0 10px; width: 100%; }
+        
+        #options-screen .scrollable-content, #achievements-screen .scrollable-content {
+            flex-grow: 1; display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+        }
+        
+        .option-group, .achievement-difficulty-group { margin-bottom: 25px; text-align: center; width: 100%; }
+        .option-group h3, .achievement-difficulty-group h3 { font-size: 1.2rem; margin-bottom: 15px; color: var(--text-color); font-weight: 400; }
+        .shop-item, .notification-item, .achievement-item { margin-bottom: 15px; text-align: left; }
+        
+        .credits-text, .tip-text, .notification-text { font-size: 0.9rem; color: var(--text-color); margin-bottom: 10px; }
+        
+        .credits-link {
+            font-family: var(--font-family); display: inline-block; color: var(--food-color); text-decoration: none;
+            border: 1px solid var(--food-color); padding: 8px 16px; border-radius: 8px; transition: all 0.2s ease-out;
+            text-transform: uppercase; font-size: 0.9rem;
+        }
+        .credits-link:hover { background-color: var(--food-color); color: var(--primary-color); box-shadow: 0 0 20px var(--cyan-glow); }
+        
+        #score-list { list-style: none; width: 100%; }
+        #score-list li {
+            display: flex; align-items: center; padding: 10px; background-color: rgba(0,0,0,0.2);
+            border-bottom: 1px solid rgba(255,0,255,0.2);
+        }
+        #score-list li:nth-child(odd) { background-color: rgba(0,0,0,0.3); }
+        #score-list .rank { font-weight: 900; width: 40px; }
+        #score-list .name { flex-grow: 1; }
+        #score-list .score { font-weight: 900; color: var(--food-color); }
+        
+        .shop-tabs, .achievements-tabs { display: flex; margin-bottom: 15px; border-bottom: 1px solid var(--accent-color); justify-content: center; flex-wrap: wrap; }
+        .shop-tab, .achievement-tab { padding: 10px 20px; cursor: pointer; opacity: 0.6; }
+        .shop-tab.active, .achievement-tab.active { opacity: 1; border-bottom: 3px solid var(--accent-color); }
+        
+        .achievement-tab[data-tab="Fácil"].active { border-color: var(--difficulty-easy); }
+        .achievement-tab[data-tab="Média"].active { border-color: var(--difficulty-medium); }
+        .achievement-tab[data-tab="Difícil"].active { border-color: var(--difficulty-hard); }
+        .achievement-tab[data-tab="Épico"].active { border-color: var(--difficulty-epic); }
+        .achievement-tab[data-tab="Extremo"].active { border-color: var(--difficulty-extreme); }
+        .achievement-tab[data-tab="Hardcore"].active { border-color: var(--difficulty-hardcore); } /* Hardcore Tab Color */
+
+
+        .shop-item, .achievement-item {
+            display: flex; justify-content: space-between; align-items: center;
+            background-color: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px;
+            width: 100%; /* Ensure full width in scrollable content */
+            margin-bottom: 10px;
+        }
+        .shop-item .menu-button, .achievement-item .menu-button { padding: 10px 25px; font-size: 0.9rem; width: auto; }
+        .shop-item-details, .achievement-item-details { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: flex-start; 
+            gap: 5px; 
+            flex-grow: 1; 
+            flex-shrink: 1; /* Allow content to shrink */
+            min-width: 0; /* Ensures content can shrink below its intrinsic size */
+            text-align: left; 
+            margin-right: 10px; /* Space between text and button */
+        }
+        .shop-item-details h3, .achievement-item-details h3 { 
+            margin: 0; 
+            font-size: 1rem; 
+            white-space: normal; /* Allow text wrapping */
+            overflow-wrap: break-word; /* Break long words */
+        }
+        .shop-item-details p, .achievement-item-details p { 
+            font-size: 0.8rem; 
+            margin: 0; 
+            opacity: 0.8; 
+            white-space: normal; /* Allow text wrapping */
+            overflow-wrap: break-word; /* Break long words */
+        }
+        .color-preview { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--text-color); flex-shrink: 0; }
+        .achievement-progress { font-size: 0.8em; opacity: 0.7; }
+        .achievement-item.completed { opacity: 0.7; }
+
+        #username-input {
+            font-family: var(--font-family);
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--accent-color);
+            color: var(--text-color);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 1rem;
+            text-align: center;
+            width: 80%;
+            max-width: 300px;
+            margin-bottom: 10px;
+        }
+        #username-error { color: #ff3366; height: 20px; }
+
+        #game-screen { justify-content: flex-start; }
+        #top-bar {
+            width: 100%; display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 0; margin-bottom: 10px;
+        }
+        #stats-container { display: flex; flex-direction: column; align-items: flex-start; }
+        #score-display { font-size: 1.5rem; font-weight: 700; color: var(--text-color); text-shadow: 0 0 5px var(--cyan-glow); margin-bottom: 5px; }
+        #coin-display { display: flex; align-items: center; gap: 8px; font-size: 1.1rem; font-weight: 700; color: gold; text-shadow: 0 0 8px rgba(255,215,0,0.7); }
+
+        /* Modified to be a row and wrap */
+        #powerup-timer-display { 
+            display: flex; 
+            flex-direction: row; /* Changed to row */
+            flex-wrap: wrap; /* Allow wrapping */
+            gap: 5px; 
+            align-items: center; 
+            justify-content: flex-end; /* Align to end for better flow with stats */
+            /* Removed max-width to allow it to expand as needed */
+            text-align: right; /* Align text within items to the right */
+        }
+        .timer-item {
+            background-color: rgba(0,0,0,0.4); 
+            color: var(--text-color); 
+            padding: 2px 8px; 
+            border-radius: 6px;
+            font-size: 0.8rem; 
+            font-weight: 700; 
+            border: 1px solid rgba(255,255,255,0.2);
+            text-shadow: 0 0 5px var(--cyan-glow);
+            white-space: nowrap; /* Prevent text wrapping within an item */
+        }
+
+        #pause-button {
+            background: transparent; border: 2px solid var(--text-color); color: var(--text-color);
+            width: 40px; height: 40px; border-radius: 8px; cursor: pointer; transition: all 0.2s ease;
+            display: flex; justify-content: center; align-items: center;
+        }
+        #pause-button:hover { background: var(--text-color); color: var(--primary-color); border-color: var(--primary-color); }
+        #pause-button svg { width: 50%; height: 50%; fill: currentColor; }
+        
+        #pause-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(13, 2, 28, 0.7);
+            color: white; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-radius: 20px; z-index: 20;
+        }
+        #pause-overlay h2 { font-size: 2.5rem; color: var(--text-color); margin-bottom: 20px; }
+        
+        canvas { background-color: rgba(13, 2, 28, 0.8); border-radius: 12px; box-shadow: inset 0 0 15px rgba(0,0,0,0.5); }
+        #game-over-screen h2 { font-size: 3rem; color: #ff3366; text-shadow: 0 0 15px rgba(255, 51, 102, 0.7); margin-bottom: 20px; }
+        #final-score { font-size: 1.5rem; margin-bottom: 40px; color: var(--text-color); }
+    </style>
+</head>
+<body class="background-default">
+
+    <div class="game-container">
+        <!-- Telas do Jogo (HTML permanece o mesmo) -->
+        <div id="start-screen" class="screen">
+            <div id="notification-bell" class="hidden">
+                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"></path></svg>
+                 <div id="notification-dot" class="hidden"></div>
+            </div>
+            <h1>Ssnake!!</h1>
+            <div id="user-profile" class="user-profile hidden">
+                <img id="user-photo" src="" alt="Foto do Usuário">
+                <span id="user-name"></span>
+            </div>
+            <button id="start-button" class="menu-button">Iniciar Jogo</button>
+            <button id="shop-button" class="menu-button">Loja</button>
+            <button id="achievements-button" class="menu-button">Conquistas</button> <!-- NEW ACHIEVEMENT BUTTON -->
+            <button id="leaderboard-button" class="menu-button">Placar</button>
+            <button id="options-button" class="menu-button">Opções</button>
+            <button id="tips-button" class="menu-button">Dicas</button>
+            <button id="login-button" class="menu-button">
+                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><defs><path id="a" d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"/></defs><clipPath id="b"><use xlink:href="#a" overflow="visible"/></clipPath><path clip-path="url(#b)" fill="#FBBC05" d="M0 37V11l17 13z"/><path clip-path="url(#b)" fill="#EA4335" d="M0 11l17 13 7-6.1L48 14V0H0z"/><path clip-clip="url(#b)" fill="#34A853" d="M0 37l30-23.5L48 14l-48 23z"/><path clip-path="url(#b)" fill="#4285F4" d="M48 48H0V37l48-23z"/></svg>
+                 <span>Login com Google</span>
+            </button>
+            <button id="logout-button" class="menu-button hidden">Sair</button>
+        </div>
+        
+        <div id="shop-screen" class="screen hidden">
+            <div class="scrollable-content" style="flex-grow: 1; display: flex; flex-direction: column; width:100%;">
+                <h2>Loja</h2>
+                <div class="shop-tabs">
+                    <div class="shop-tab active" data-tab="backgrounds">Fundos</div>
+                    <div class="shop-tab" data-tab="snakeColors">Cores da Cobra</div>
+                </div>
+                <div id="shop-items-container" style="flex-grow: 1; overflow-y: auto;"></div>
+            </div>
+            <button id="shop-back-button" class="menu-button" style="flex-shrink: 0;">Voltar</button>
+        </div>
+
+        <div id="options-screen" class="screen hidden">
+            <div class="scrollable-content">
+                <h2>Opções</h2>
+                <div class="option-group">
+                    <h3>Controles</h3>
+                    <button data-control="keyboard" class="menu-button">Teclado</button>
+                    <button data-control="touch" class="menu-button">Touch</button>
+                </div>
+                <div class="option-group">
+                    <h3>Proporção da Tela</h3>
+                    <button data-ratio="notebook" class="menu-button">Notebook</button>
+                    <button data-ratio="mobile" class="menu-button">Celular</button>
+                </div>
+                <div class="option-group">
+                    <h3>Créditos</h3>
+                    <p class="credits-text">Criado por: Jeovane Souza</p>
+                    <a href="https://www.instagram.com/jeo_souzx_?igsh=cWJpanpvams5YWlk" target="_blank" rel="noopener noreferrer" class="credits-link">Instagram</a>
+                </div>
+            </div>
+            <button id="back-button" class="menu-button">Voltar</button>
+        </div>
+        
+        <div id="tips-screen" class="screen hidden">
+             <div class="scrollable-content">
+                <h2>Dicas</h2>
+                <div class="option-group">
+                    <h3>Como Jogar</h3>
+                    <p class="tip-text">- PC: Use as Setas ou as teclas WASD para mover a cobra.</p>
+                    <p class="tip-text">- Celular: Deslize o dedo na tela para a direção desejada.</p>
+                    <p class="tip-text">- Pressione 'P' para pausar e continuar o jogo.</p>
+                </div>
+                 <div class="option-group">
+                    <h3>Maçãs Bônus</h3>
+                    <p class="tip-text">- Maçã Roxa: Dá entre 10 e 20 moedas.</p>
+                    <p class="tip-text">- Maçã Dourada: Permite atravessar as paredes por 30 segundos.</p>
+                    <p class="tip-text">- Maçã Verde: Te deixa imortal a colisões com seu corpo por 30 segundos.</p>
+                    <p class="tip-text">- Maçã Azul: Cria um campo magnético por 45 segundos que atrai maçãs próximas.</p>
+                    <!-- NEW TIPS FOR NEW APPLES -->
+                    <p class="tip-text">- Maçã Multiplicadora: Multiplica pontos e moedas das próximas 5 maçãs ou por 20s.</p>
+                    <p class="tip-text">- Maçã Fantasma: Permite atravessar seu próprio corpo por 15s.</p>
+                    <p class="tip-text">- Maçã Reverter: Inverte os controles por 5s.</p>
+                </div>
+                <div class="option-group">
+                    <h3>Dica Extra</h3>
+                    <p class="tip-text">A língua da cobra sempre aponta para a direção em que ela está se movendo!</p>
+                </div>
+            </div>
+            <button id="tips-back-button" class="menu-button">Voltar</button>
+        </div>
+        
+        <div id="notification-screen" class="screen hidden">
+             <div class="scrollable-content" id="notification-list"></div>
+             <button id="collect-all-rewards-button" class="menu-button">Coletar Tudo</button> {/* NEW COLLECT ALL BUTTON */}
+            <button id="notification-back-button" class="menu-button">Voltar</button>
+        </div>
+
+        <div id="leaderboard-screen" class="screen hidden">
+             <div>
+                <h2>Placar</h2>
+                <ol id="score-list"><li>Carregando...</li></ol>
+             </div>
+             <button id="leaderboard-back-button" class="menu-button">Voltar</button>
+        </div>
+        
+        <div id="achievements-screen" class="screen hidden">
+            <div class="scrollable-content" style="flex-grow: 1; display: flex; flex-direction: column; width: 100%;">
+                <h2>Conquistas</h2>
+                <div class="achievements-tabs">
+                    <div class="achievement-tab active" data-tab="Fácil">Fácil</div>
+                    <div class="achievement-tab" data-tab="Média">Média</div>
+                    <div class="achievement-tab" data-tab="Difícil">Difícil</div>
+                    <div class="achievement-tab" data-tab="Épico">Épico</div>
+                    <div class="achievement-tab" data-tab="Extremo">Extremo</div>
+                    <div class="achievement-tab" data-tab="Hardcore">Hardcore</div> {/* NEW HARDCORE TAB */}
+                </div>
+                <div id="achievements-list-container" style="flex-grow: 1; overflow-y: auto;"></div>
+            </div>
+            <button id="achievements-back-button" class="menu-button" style="flex-shrink: 0;">Voltar</button>
+        </div>
+
+        <div id="game-screen" class="screen hidden">
+            <div id="top-bar" class="hidden">
+                <div id="stats-container">
+                    <div id="score-display">Score: 0</div>
+                    <div id="coin-display">S$ <span id="coin-count">0</span></div>
+                </div>
+                 <div id="powerup-timer-display" class="hidden"></div>
+                <button id="pause-button">
+                    <svg id="pause-icon" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>
+                    <svg id="play-icon" class="hidden" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                </button>
+            </div>
+            <canvas id="gameCanvas"></canvas>
+            <div id="pause-overlay" class="hidden">
+                <h2>Pausado</h2>
+                <button id="resume-button" class="menu-button">Continuar</button>
+                <button id="pause-options-button" class="menu-button">Opções</button>
+                <button id="pause-home-button" class="menu-button">Tela Inicial</button>
+            </div>
+        </div>
+        
+        <div id="game-over-screen" class="screen hidden">
+             <h2>Game Over</h2>
+             <p id="final-score">Seu Score: 0</p>
+             <button id="restart-button" class="menu-button">Reiniciar</button>
+             <button id="home-button" class="menu-button">Tela Inicial</button>
+        </div>
+
+        <div id="username-screen" class="screen hidden">
+            <h2>Escolha o seu nome de usuário</h2>
+            <p class="tip-text" style="width: 80%; max-width: 300px;">Este nome será exibido no placar. Escolha com sabedoria, não poderá ser alterado!</p>
+            <input type="text" id="username-input" placeholder="Digite seu nome..." maxlength="15">
+            <p id="username-error" class="hidden" style="color: #ff3366; height: 20px;"></p>
+            <button id="submit-username-button" class="menu-button">Confirmar</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        import { getFirestore, collection, query, orderBy, limit, getDocs, serverTimestamp, doc, updateDoc, setDoc, getDoc, addDoc, writeBatch, where } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore.js";
+
+        // Configuração Firebase Corrigida
+        const firebaseConfig = {
+            apiKey: "AIzaSyDhcu3_fdWIJbPAiVqUpe_AwJgZiC-XoB8",
+            authDomain: "sssnake-e464c.firebaseapp.com",
+            projectId: "sssnake-e464c",
+            storageBucket: "sssnake-e464c.appspot.com",
+            messagingSenderId: "838444316745",
+            appId: "1:838444316745:web:eeb1d3d1b94373a5952798",
+            measurementId: "G-1WBVCSF0FX"
+        };
+        
+        // --- Inicialização do Firebase ---
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const provider = new GoogleAuthProvider();
+
+        // --- Elementos do DOM ---
+        const screens = { 
+            start: document.getElementById('start-screen'), 
+            options: document.getElementById('options-screen'), 
+            shop: document.getElementById('shop-screen'), 
+            game: document.getElementById('game-screen'), 
+            gameOver: document.getElementById('game-over-screen'), 
+            leaderboard: document.getElementById('leaderboard-screen'), 
+            tips: document.getElementById('tips-screen'), 
+            notifications: document.getElementById('notification-screen'), 
+            username: document.getElementById('username-screen'),
+            achievements: document.getElementById('achievements-screen') 
+        };
+        const buttons = { 
+            start: document.getElementById('start-button'), 
+            shop: document.getElementById('shop-button'), 
+            shopBack: document.getElementById('shop-back-button'), 
+            options: document.getElementById('options-button'), 
+            back: document.getElementById('back-button'), 
+            restart: document.getElementById('restart-button'), 
+            home: document.getElementById('home-button'), 
+            login: document.getElementById('login-button'), 
+            logout: document.getElementById('logout-button'), 
+            leaderboard: document.getElementById('leaderboard-button'), 
+            leaderboardBack: document.getElementById('leaderboard-back-button'), 
+            tips: document.getElementById('tips-button'), 
+            tipsBack: document.getElementById('tips-back-button'), 
+            notificationBell: document.getElementById('notification-bell'), 
+            notificationBack: document.getElementById('notification-back-button'), 
+            pause: document.getElementById('pause-button'), 
+            resume: document.getElementById('resume-button'), 
+            pauseOptions: document.getElementById('pause-options-button'), 
+            pauseHome: document.getElementById('pause-home-button'), 
+            submitUsername: document.getElementById('submit-username-button'),
+            achievements: document.getElementById('achievements-button'), 
+            achievementsBack: document.getElementById('achievements-back-button'),
+            collectAllRewards: document.getElementById('collect-all-rewards-button') // NEW
+        };
+        const userProfile = document.getElementById('user-profile');
+        const userPhoto = document.getElementById('user-photo');
+        const userName = document.getElementById('user-name');
+        const topBar = document.getElementById('top-bar');
+        const pauseIcon = document.getElementById('pause-icon');
+        const playIcon = document.getElementById('play-icon');
+        const pauseOverlay = document.getElementById('pause-overlay');
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreDisplay = document.getElementById('score-display');
+        const coinCountSpan = document.getElementById('coin-count');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const scoreList = document.getElementById('score-list');
+        const powerupTimerDisplay = document.getElementById('powerup-timer-display');
+        const notificationDot = document.getElementById('notification-dot');
+        const notificationList = document.getElementById('notification-list');
+        const shopItemsContainer = document.getElementById('shop-items-container');
+        const shopTabs = document.querySelector('.shop-tabs');
+        const usernameInput = document.getElementById('username-input');
+        const usernameError = document.getElementById('username-error');
+        const achievementsTabs = document.querySelector('.achievements-tabs'); 
+        const achievementsListContainer = document.getElementById('achievements-list-container'); 
+
+        // --- Configurações do Jogo e Dados (com novos itens e dados de conquistas) ---
+        const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+        let gameSettings = { controlMode: isMobile ? 'touch' : 'keyboard', aspectRatio: isMobile ? 'mobile' : 'notebook' };
+        let gridSize = 15;
+        let snake, food, score, coins, direction, gameInterval;
+        let isPaused = false;
+        let previousScreen = screens.start;
+        let touchStartX = 0, touchStartY = 0;
+        const preventDefaultHandler = (e) => e.preventDefault();
+        let tongueState = { counter: 0, flickerDuration: 15, flickerInterval: 80 };
+        let bonusApples = [];
+        let baseGameInterval = 140; // Base interval for game loop
+        let currentGameInterval = baseGameInterval; // Current interval, changes with shrinking power-up
+
+        let powerUps = { 
+            wrap: { active: false, endTime: 0, duration: 30000 }, 
+            immortal: { active: false, endTime: 0, duration: 30000 }, 
+            magnet: { active: false, endTime: 0, duration: 45000 },
+            multiplier: { active: false, endTime: 0, duration: 20000, applesRemaining: 5 }, // Renamed from doubleScore
+            ghost: { active: false, endTime: 0, duration: 15000 }, // New: Ghost Apple
+            reverse: { active: false, endTime: 0, duration: 5000 } // New: Reverse Apple
+        };
+        
+        // Game-specific stats for current game session, NOT user data
+        let scoreAchievedWithoutImmortality = 0;
+        let maxSnakeLengthInCurrentGame = 1;
+        let immortalityUsedInCurrentGame = false; 
+        let snakeScale = 1; // Used for drawing the shrinking apple effect
+
+
+        const snakeColors = { 
+            default: { name: 'Magenta Padrão', color: '#ff00ff' }, 
+            blue: { name: 'Azul Neon', color: '#3498db' }, 
+            green: { name: 'Verde Cyber', color: '#00ff00' }, 
+            orange: { name: 'Laranja Elétrico', color: '#ff8c00' }, 
+            gold: { name: 'Dourado', color: '#ffd700'}, 
+            white: { name: 'Branco Espectral', color: '#ffffff' }, 
+            toxic: { name: 'Verde Tóxica', color: '#7fff00' }, 
+            hotpink: { name: 'Rosa Choque', color: '#FF69B4' }, 
+            cosmic: { name: 'Violeta Cósmico', color: '#8A2BE2' }, 
+            magma: { name: 'Vermelho Magma', color: '#FF4500' }, 
+            sky: { name: 'Azul Celeste', color: '#00BFFF' }, 
+            lime: { name: 'Lima-Limão', color: '#ADFF2F' },
+            // NEW SNAKE COLORS (10 added as requested)
+            crimson: { name: 'Vermelho Carmesim', color: '#DC143C' },
+            forest_green: { name: 'Verde Floresta', color: '#228B22' },
+            royal_blue: { name: 'Azul Royal', color: '#4169E1' },
+            silver: { name: 'Prata', color: '#C0C0C0' },
+            obsidian: { name: 'Obsidiana', color: '#290001' },
+            emerald: { name: 'Esmeralda', color: '#50C878' },
+            ruby: { name: 'Rubi', color: '#E0115F' },
+            sapphire: { name: 'Safira', color: '#0F52BA' },
+            platinum: { name: 'Platina', color: '#E5E4E2' },
+            void: { name: 'Vazio', color: '#0A0A0A' }
+        };
+        const shopItems = {
+            backgrounds: [ 
+                { id: 'sunset', name: 'Pôr do Sol', price: 50 }, 
+                { id: 'matrix', name: 'Chuva Digital', price: 750 }, 
+                { id: 'nebula', name: 'Nebulosa Giratória', price: 1200 }, 
+                { id: 'wavy', name: 'Ondas Psicadélicas', price: 2000 }, 
+                { id: 'hexagons', name: 'Colmeia Digital', price: 2500 }, 
+                { id: 'stars', name: 'Espaço Sideral', price: 3000 }, 
+                { id: 'aurora', name: 'Aurora Boreal', price: 4000 }, 
+                { id: 'tunnel', name: 'Túnel Hipnótico', price: 4500 }, 
+                { id: 'circuit', name: 'Circuito Digital', price: 5000 }, 
+                { id: 'forcefield', name: 'Campo de Força', price: 5500 }, 
+                { id: 'liquid', name: 'Lava Lamp', price: 6000 },
+                // NEW BACKGROUNDS (10 added as requested)
+                { id: 'cosmic_dream', name: 'Sonho Cósmico', price: 7000 },
+                { id: 'forest_glow', name: 'Resplendor Florestal', price: 7500 },
+                { id: 'cyber_grid', name: 'Grade Cibernética', price: 8000 },
+                { id: 'lava_flow', name: 'Fluxo de Lava', price: 8500 },
+                { id: 'starry_night', name: 'Noite Estrelada', price: 9000 },
+                { id: 'ocean_depths', name: 'Profundezas do Oceano', price: 9500 },
+                { id: 'desert_dunes', name: 'Dunas do Deserto', price: 10000 },
+                { id: 'retro_grid', name: 'Grade Retro', price: 10500 },
+                { id: 'stardust_swirl', name: 'Redemoinho Estelar', price: 11000 },
+                { id: 'mystic_glade', name: 'Clareira Mística', price: 11500 },
+                { id: 'neon_cityscape', name: 'Paisagem Urbana Neon', price: 12000 },
+                { id: 'deep_sea_current', name: 'Corrente Abissal', price: 12500 },
+                { id: 'solar_flame', name: 'Chama Solar', price: 13000 },
+                { id: 'pixel_forest', name: 'Floresta de Pixels', price: 13500 },
+                { id: 'ice_caverns', name: 'Cavernas de Gelo', price: 14000 },
+                { id: 'volcanic_ash', name: 'Cinzas Vulcânicas', price: 14500 },
+                { id: 'dream_weave', name: 'Trama dos Sonhos', price: 15000 },
+                { id: 'quantum_foam', name: 'Espuma Quântica', price: 15500 }
+            ],
+            snakeColors: [ 
+                { id: 'blue', name: 'Azul Neon', price: 100 }, 
+                { id: 'green', name: 'Verde Cyber', price: 800 }, 
+                { id: 'orange', name: 'Laranja Elétrico', price: 1500 }, 
+                { id: 'gold', name: 'Cobra de Ouro', price: 5000 }, 
+                { id: 'white', name: 'Cobra Fantasma', price: 7500 }, 
+                { id: 'toxic', name: 'Cobra Tóxica', price: 10000 }, 
+                { id: 'hotpink', name: 'Rosa Choque', price: 12000 }, 
+                { id: 'cosmic', name: 'Violeta Cósmico', price: 15000 }, 
+                { id: 'magma', name: 'Vermelho Magma', price: 18000 }, 
+                { id: 'sky', name: 'Azul Celeste', price: 20000 }, 
+                { id: 'lime', name: 'Lima-Limão', price: 25000 },
+                // NEW SNAKE COLORS from list
+                { id: 'crimson', name: 'Carmesim', price: 28000 },
+                { id: 'forest_green', name: 'Verde Floresta', price: 30000 },
+                { id: 'royal_blue', name: 'Azul Royal', price: 32000 },
+                { id: 'silver', name: 'Prata', price: 35000 },
+                { id: 'obsidian', name: 'Obsidiana', price: 38000 },
+                { id: 'emerald', name: 'Esmeralda', price: 40000 },
+                { id: 'ruby', name: 'Rubi', price: 42000 },
+                { id: 'sapphire', name: 'Safira', price: 45000 },
+                { id: 'platinum', name: 'Platina', price: 48000 },
+                { id: 'void', name: 'Vazio', price: 50000 }
+            ]
+        };
+        let userData = { 
+            name: '', 
+            highScore: 0, 
+            totalCoins: 0, 
+            purchasedBgs: ['default'], 
+            selectedBg: 'default', 
+            purchasedSnakeColors: ['default'], 
+            selectedSnakeColor: 'default', 
+            collectedRewards: [], 
+            usernameIsSet: false,
+            achievements: {}, 
+            gameStats: { 
+                applesEaten: 0,
+                goldenApples: 0,
+                greenApples: 0,
+                blueApples: 0,
+                purpleApples: 0,
+                multiplierApples: 0, // Renamed from doubleLuckApples
+                ghostApples: 0, // New stat
+                reverseApples: 0, // New stat
+                gamesPlayed: 0,
+                maxScoreNoSelfCollision: 0,
+                maxSnakeLength: 0
+            }
+        };
+
+        // NEW: Achievement Data (Totaling 270 achievements across all difficulties)
+        // This structure allows for easy expansion and management of achievement tiers.
+        const achievementsBase = [
+            // { type: 'score', tiers: { 'Fácil': [10, 25, 50, 90], 'Média': [100, 200, 300, 400], 'Difícil': [500, 750, 1000, 1250], 'Épico': [1500, 2000, 2500], 'Extremo': [3000, 4000, 5000], 'Hardcore': [7500, 10000, 12500] } },
+            // { type: 'applesEaten', tiers: { 'Fácil': [5, 15, 30, 50], 'Média': [75, 100, 150, 200], 'Difícil': [250, 400, 500, 600], 'Épico': [750, 1000, 1250], 'Extremo': [1500, 2000, 2500], 'Hardcore': [3000, 4000, 5000, 6000] } },
+            // { type: 'gamesPlayed', tiers: { 'Fácil': [1, 3, 7, 10], 'Média': [15, 20], 'Difícil': [30, 40, 50], 'Épico': [75, 100, 125], 'Extremo': [150, 200, 250], 'Hardcore': [300, 400, 500, 600] } },
+            // { type: 'longestSnake', tiers: { 'Fácil': [10, 15], 'Média': [20, 25], 'Difícil': [30, 40], 'Épico': [50, 75, 85], 'Extremo': [100, 125], 'Hardcore': [150, 200] } },
+            // { type: 'totalCoins', tiers: { 'Fácil': [50, 100], 'Média': [500, 750, 1000], 'Difícil': [1500, 2500, 3500], 'Épico': [5000, 7500, 8500], 'Extremo': [10000, 15000, 18000], 'Hardcore': [20000, 30000, 40000] } },
+            // { type: 'noSelfCollisionScore', tiers: { 'Fácil': [50], 'Média': [200, 300], 'Difícil': [500, 750], 'Épico': [1000], 'Extremo': [1500], 'Hardcore': [2000, 3000] } },
+            // { type: 'goldenApples', tiers: { 'Fácil': [1, 2], 'Média': [5, 7], 'Difícil': [10, 12], 'Épico': [15, 18], 'Extremo': [20, 25], 'Hardcore': [30, 40] } },
+            // { type: 'greenApples', tiers: { 'Fácil': [1, 2], 'Média': [5, 7], 'Difícil': [10, 12], 'Épico': [15, 18], 'Extremo': [20, 25], 'Hardcore': [30, 40] } },
+            // { type: 'blueApples', tiers: { 'Fácil': [1, 2], 'Média': [5, 7], 'Difícil': [10, 12], 'Épico': [15, 18], 'Extremo': [20, 25], 'Hardcore': [30, 40] } },
+            // { type: 'purpleApples', tiers: { 'Fácil': [1, 2], 'Média': [5, 7], 'Difícil': [10, 12], 'Épico': [15, 18], 'Extremo': [20, 25], 'Hardcore': [30, 40] } },
+            // { type: 'multiplierApples', tiers: { 'Fácil': [1, 2], 'Média': [5, 7], 'Difícil': [10, 12], 'Épico': [15, 18], 'Extremo': [20, 25], 'Hardcore': [30, 40] } },
+            // { type: 'ghostApples', tiers: { 'Fácil': [1, 2], 'Média': [3, 5], 'Difícil': [7, 10], 'Épico': [12, 15], 'Extremo': [18, 20], 'Hardcore': [25, 30] } }, // New apple achievements
+            // { type: 'reverseApples', tiers: { 'Fácil': [1, 2], 'Média': [3, 5], 'Difícil': [7, 10], 'Épico': [12, 15], 'Extremo': [18, 20], 'Hardcore': [25, 30] } } // New apple achievements
+        ];
+
+        // This approach allows for programmatic generation of achievements
+        const generateAchievements = () => {
+            const achievements = [];
+            const difficulties = ['Fácil', 'Média', 'Difícil', 'Épico', 'Extremo', 'Hardcore'];
+
+            const rewardPools = {
+                coins: {
+                    'Fácil': [20, 30, 40, 50, 60, 70],
+                    'Média': [80, 100, 120, 150, 180, 220],
+                    'Difícil': [200, 250, 280, 300, 350, 400, 450, 500, 600],
+                    'Épico': [500, 600, 700, 750, 800, 850, 900, 1000, 1100, 1200, 1300, 1500, 1800],
+                    'Extremo': [1000, 1200, 1300, 1500, 1800, 2000, 2200, 2500, 3000, 3500, 4000],
+                    'Hardcore': [2000, 2200, 2500, 2700, 3000, 3500, 4000, 5000, 6000, 7000, 7500, 8000, 10000, 12000]
+                },
+                snakeColors: [
+                    { id: 'blue', name: 'Azul Neon' }, { id: 'green', name: 'Verde Cyber' },
+                    { id: 'orange', name: 'Laranja Elétrico' }, { id: 'gold', name: 'Cobra de Ouro' },
+                    { id: 'white', name: 'Cobra Fantasma' }, { id: 'toxic', name: 'Cobra Tóxica' },
+                    { id: 'hotpink', name: 'Rosa Choque' }, { id: 'cosmic', name: 'Violeta Cósmico' },
+                    { id: 'magma', name: 'Vermelho Magma' }, { id: 'sky', name: 'Azul Celeste' },
+                    { id: 'lime', name: 'Lima-Limão' }, { id: 'crimson', name: 'Vermelho Carmesim' },
+                    { id: 'forest_green', name: 'Verde Floresta' }, { id: 'royal_blue', name: 'Azul Royal' },
+                    { id: 'silver', name: 'Prata' }, { id: 'obsidian', name: 'Obsidiana' },
+                    { id: 'emerald', name: 'Esmeralda' }, { id: 'ruby', name: 'Rubi' },
+                    { id: 'sapphire', name: 'Safira' }, { id: 'platinum', name: 'Platina' },
+                    { id: 'void', name: 'Vazio' }
+                ],
+                backgrounds: [
+                    { id: 'pulse', name: 'Pulso' }, { id: 'matrix', name: 'Matrix' },
+                    { id: 'nebula', name: 'Nebulosa Giratória' }, { id: 'aurora', name: 'Aurora Boreal' },
+                    { id: 'cosmic_dream', name: 'Sonho Cósmico' }, { id: 'forest_glow', name: 'Resplendor Florestal' },
+                    { id: 'cyber_grid', name: 'Grade Cibernética' }, { id: 'lava_flow', name: 'Fluxo de Lava' },
+                    { id: 'starry_night', name: 'Noite Estrelada' }, { id: 'ocean_depths', name: 'Profundezas do Oceano' },
+                    { id: 'desert_dunes', name: 'Dunas do Deserto' }, { id: 'retro_grid', name: 'Grade Retro' },
+                    { id: 'stardust_swirl', name: 'Redemoinho Estelar' }, { id: 'mystic_glade', name: 'Clareira Mística' },
+                    { id: 'neon_cityscape', name: 'Paisagem Urbana Neon' }, { id: 'deep_sea_current', name: 'Corrente Abissal' },
+                    { id: 'solar_flame', name: 'Chama Solar' }, { id: 'pixel_forest', name: 'Floresta de Pixels' },
+                    { id: 'ice_caverns', name: 'Cavernas de Gelo' }, { id: 'volcanic_ash', name: 'Cinzas Vulcânicas' },
+                    { id: 'dream_weave', name: 'Trama dos Sonhos' }, { id: 'quantum_foam', name: 'Espuma Quântica' }
+                ]
+            };
+
+            const getReward = (difficulty) => {
+                let reward = { coins: 0 };
+                // Randomly add coins
+                if (rewardPools.coins[difficulty] && rewardPools.coins[difficulty].length > 0) {
+                    reward.coins = rewardPools.coins[difficulty][Math.floor(Math.random() * rewardPools.coins[difficulty].length)];
+                } else {
+                    reward.coins = 50 + difficulties.indexOf(difficulty) * 20; // fallback
+                }
+
+                // Chance for a cosmetic item
+                if (Math.random() < 0.2 + difficulties.indexOf(difficulty) * 0.1) { // Higher chance for harder difficulties
+                    if (Math.random() < 0.5 && rewardPools.snakeColors.length > 0) { // 50% chance for color
+                        const color = rewardPools.snakeColors.splice(Math.floor(Math.random() * rewardPools.snakeColors.length), 1)[0];
+                        reward.item = { type: 'snakeColors', id: color.id };
+                    } else if (rewardPools.backgrounds.length > 0) { // 50% chance for background
+                        const bg = rewardPools.backgrounds.splice(Math.floor(Math.random() * rewardPools.backgrounds.length), 1)[0];
+                        reward.item = { type: 'backgrounds', id: bg.id };
+                    }
+                }
+                return reward;
+            };
+
+            const achievementTypes = {
+                score: { base: 10, mult: 2, desc: (t) => `Alcance ${t} pontos.` },
+                applesEaten: { base: 5, mult: 2, desc: (t) => `Coma ${t} maçãs.` },
+                gamesPlayed: { base: 1, mult: 2, desc: (t) => `Jogue ${t} partidas.` },
+                longestSnake: { base: 10, mult: 1.5, desc: (t) => `Alcance ${t} de comprimento na cobra.` },
+                totalCoins: { base: 50, mult: 2, desc: (t) => `Acumule ${t} moedas totais.` },
+                noSelfCollisionScore: { base: 50, mult: 2, desc: (t) => `Alcance ${t} pontos sem colidir com seu corpo.` },
+                goldenApples: { base: 1, mult: 1.5, desc: (t) => `Coma ${t} maçãs douradas.` },
+                greenApples: { base: 1, mult: 1.5, desc: (t) => `Coma ${t} maçãs verdes.` },
+                blueApples: { base: 1, mult: 1.5, desc: (t) => `Coma ${t} maçãs azuis.` },
+                purpleApples: { base: 1, mult: 1.5, desc: (t) => `Coma ${t} maçãs roxas.` },
+                multiplierApples: { base: 1, mult: 1.5, desc: (t) => `Coma ${t} maçãs Multiplicadoras.` },
+                ghostApples: { base: 1, mult: 1.5, desc: (t) => `Coma ${t} maçãs Fantasma.` },
+                reverseApples: { base: 1, mult: 1.5, desc: (t) => `Coma ${t} maçãs Reverter.` }
+            };
+
+            const numAchievementsPerTypePerDifficulty = 5; // Aim for 5 tiers per type per difficulty
+            const numUniqueAchievementTypes = Object.keys(achievementTypes).length;
+            let achievementCounter = 0;
+
+            difficulties.forEach((diff, diffIndex) => {
+                Object.keys(achievementTypes).forEach(typeKey => {
+                    const typeDef = achievementTypes[typeKey];
+                    let currentTarget = typeDef.base * Math.pow(typeDef.mult, diffIndex * numAchievementsPerTypePerDifficulty / (difficulties.length - 1)); // Scale target with difficulty
+
+                    for (let i = 0; i < numAchievementsPerTypePerDifficulty; i++) {
+                        achievementCounter++;
+                        const id = `ach_${diff.toLowerCase()}_${typeKey}_${achievementCounter}`;
+                        const target = Math.round(currentTarget);
+                        const name = typeDef.desc(target).replace('.', ''); // Simple name generation
+                        const desc = typeDef.desc(target) + (typeKey.includes('Apples') || typeKey.includes('Snake') || typeKey.includes('Games') ? ' (total na vida).' : '');
+
+                        achievements.push({
+                            id: id,
+                            name: name,
+                            desc: desc,
+                            difficulty: diff,
+                            type: typeKey,
+                            target: target,
+                            reward: getReward(diff)
+                        });
+                        currentTarget *= typeDef.mult; // Scale for next tier
+                    }
+                });
+            });
+
+            return achievements;
+        };
+
+        const achievementsData = generateAchievements();
+
+
+        // Helper to group achievements by difficulty for rendering
+        const achievementsByDifficulty = achievementsData.reduce((acc, ach) => {
+            (acc[ach.difficulty] = acc[ach.difficulty] || []).push(ach);
+            return acc;
+        }, {});
+        
+        // --- Declaração de Funções ---
+        async function checkNotifications(user) { 
+            if (!user) {
+                buttons.notificationBell.classList.add('hidden');
+                notificationDot.classList.add('hidden');
+                return;
+            }
+            buttons.notificationBell.classList.remove('hidden'); 
+            const q = query(collection(db, "notifications"), orderBy("timestamp", "desc")); 
+            const querySnapshot = await getDocs(q); 
+            const unreadNotifs = querySnapshot.docs.filter(doc => !(userData.collectedRewards || []).includes(doc.id)); 
+            
+            // Check for uncollected achievements
+            const uncollectedAchievements = achievementsData.filter(ach => 
+                (userData.achievements[ach.id]?.completed && !userData.achievements[ach.id]?.collected)
+            );
+
+            if (unreadNotifs.length > 0 || uncollectedAchievements.length > 0) { 
+                notificationDot.classList.remove('hidden'); 
+            } else { 
+                notificationDot.classList.add('hidden'); 
+            } 
+        }
+
+        async function renderNotifications() {
+            notificationList.innerHTML = '<h2>Notificações</h2>';
+            const user = auth.currentUser;
+            if(!user) { notificationList.innerHTML += '<p class="notification-text">Faça login para ver as suas notificações.</p>'; return; }
+            const q = query(collection(db, "notifications"), orderBy("timestamp", "desc"));
+            const querySnapshot = await getDocs(q);
+
+            // Display collected achievements pending reward collection
+            const uncollectedAchievements = achievementsData.filter(ach => 
+                (userData.achievements[ach.id]?.completed && !userData.achievements[ach.id]?.collected)
+            );
+
+            if (querySnapshot.empty && uncollectedAchievements.length === 0) { 
+                notificationList.innerHTML += '<p class="notification-text">Nenhuma novidade por aqui.</p>'; 
+            } else {
+                // Add uncollected achievement notifications first
+                uncollectedAchievements.forEach(ach => {
+                    const notifEl = document.createElement('div'); 
+                    notifEl.className = 'option-group notification-item';
+                    let rewardText = '';
+                    if (ach.reward.coins) rewardText += `S$ ${ach.reward.coins}`;
+                    if (ach.reward.item) {
+                        const itemName = shopItems[ach.reward.item.type].find(item => item.id === ach.reward.item.id)?.name || 'Item Desconhecido';
+                        if (rewardText) rewardText += ' + ';
+                        rewardText += `${itemName}`;
+                    }
+                    notifEl.innerHTML = `
+                        <h3>Conquista Desbloqueada: ${ach.name}</h3>
+                        <div class="notification-text">${ach.desc}</div>
+                        <button class="menu-button" data-achievement-id="${ach.id}" data-reward-id="${ach.id}" ${userData.achievements[ach.id]?.collected ? 'disabled' : ''}>
+                            ${userData.achievements[ach.id]?.collected ? 'Coletado' : `Coletar Recompensa (${rewardText})`}
+                        </button>
+                    `;
+                    notificationList.appendChild(notifEl);
+                });
+
+                // Add regular notifications
+                querySnapshot.forEach(docSnap => {
+                    const data = docSnap.data(); 
+                    const notifEl = document.createElement('div'); 
+                    notifEl.className = 'option-group notification-item';
+                    let buttonHtml = ''; 
+                    const isCollected = userData.collectedRewards.includes(docSnap.id);
+                    if (data.reward && data.reward > 0) { 
+                        buttonHtml = `<button class="menu-button" data-reward-id="${docSnap.id}" data-reward-amount="${data.reward}" ${isCollected ? 'disabled' : ''}>${isCollected ? 'Coletado' : `Coletar S$ ${data.reward}`}</button>`; 
+                    } else if (data.rewardItem) {
+                        const itemType = data.rewardItem.type === 'snakeColors' ? 'Cor' : 'Fundo';
+                        buttonHtml = `<button class="menu-button" data-reward-id="${docSnap.id}" data-reward-item='${JSON.stringify(data.rewardItem)}' ${isCollected ? 'disabled' : ''}>${isCollected ? 'Coletado' : `Coletar ${itemType}`}</button>`;
+                    }
+                    notifEl.innerHTML = `<h3>${data.title}</h3><div class="notification-text">${data.message}</div>${buttonHtml}`;
+                    notificationList.appendChild(notifEl);
+                });
+            }
+            // Show/hide collect all button
+            if (uncollectedAchievements.length > 0 || querySnapshot.docs.filter(doc => !userData.collectedRewards.includes(doc.id)).length > 0) {
+                buttons.collectAllRewards.classList.remove('hidden');
+            } else {
+                buttons.collectAllRewards.classList.add('hidden');
+            }
+        }
+
+        async function collectReward(target) {
+            const user = auth.currentUser; 
+            if (!user || target.disabled) return;
+            const rewardId = target.dataset.rewardId;
+            
+            // Check if it's an achievement reward
+            const achievementId = target.dataset.achievementId;
+            if (achievementId) {
+                if (userData.achievements[achievementId]?.collected) return;
+                const ach = achievementsData.find(a => a.id === achievementId);
+                if (ach) {
+                    if (ach.reward.coins) {
+                        userData.totalCoins += ach.reward.coins;
+                        coins = userData.totalCoins; 
+                        if(coinCountSpan) coinCountSpan.textContent = coins;
+                    }
+                    if (ach.reward.item) {
+                        const { type, id } = ach.reward.item;
+                        if (type === 'snakeColors' && !userData.purchasedSnakeColors.includes(id)) {
+                            userData.purchasedSnakeColors.push(id);
+                        } else if (type === 'backgrounds' && !userData.purchasedBgs.includes(id)) {
+                            userData.purchasedBgs.push(id);
+                        }
+                    }
+                    userData.achievements[achievementId].collected = true;
+                    target.disabled = true; 
+                    target.textContent = "Coletado!";
+                    await saveUserData(); 
+                    await checkNotifications(user);
+                    renderAchievements(ach.difficulty); // Re-render achievements to update status
+                }
+                return;
+            }
+
+            // Regular notification reward
+            if (userData.collectedRewards.includes(rewardId)) return;
+            
+            const rewardAmount = parseInt(target.dataset.rewardAmount);
+            const rewardItem = target.dataset.rewardItem ? JSON.parse(target.dataset.rewardItem) : null;
+
+            if(rewardAmount > 0) {
+                userData.totalCoins += rewardAmount;
+                coins = userData.totalCoins; 
+                if(coinCountSpan) coinCountSpan.textContent = coins;
+            }
+            if(rewardItem) {
+                if(rewardItem.type === 'snakeColors' && !userData.purchasedSnakeColors.includes(rewardItem.id)) {
+                    userData.purchasedSnakeColors.push(rewardItem.id);
+                } else if (rewardItem.type === 'backgrounds' && !userData.purchasedBgs.includes(rewardItem.id)) {
+                    userData.purchasedBgs.push(rewardItem.id);
+                }
+            }
+            
+            target.disabled = true; 
+            target.textContent = "Coletado!";
+            userData.collectedRewards.push(rewardId);
+            await saveUserData(); 
+            await checkNotifications(user);
+        }
+
+        async function collectAllRewards() { // NEW FUNCTION
+            const user = auth.currentUser;
+            if (!user) return;
+
+            let rewardsCollected = false;
+
+            // Collect all uncollected achievements
+            const uncollectedAchievements = achievementsData.filter(ach => 
+                (userData.achievements[ach.id]?.completed && !userData.achievements[ach.id]?.collected)
+            );
+            for (const ach of uncollectedAchievements) {
+                if (ach.reward.coins) {
+                    userData.totalCoins += ach.reward.coins;
+                }
+                if (ach.reward.item) {
+                    const { type, id } = ach.reward.item;
+                    if (type === 'snakeColors' && !userData.purchasedSnakeColors.includes(id)) {
+                        userData.purchasedSnakeColors.push(id);
+                    } else if (type === 'backgrounds' && !userData.purchasedBgs.includes(id)) {
+                        userData.purchasedBgs.push(id);
+                    }
+                }
+                userData.achievements[ach.id].collected = true;
+                rewardsCollected = true;
+            }
+
+            // Collect all regular notifications
+            const q = query(collection(db, "notifications"), orderBy("timestamp", "desc"));
+            const querySnapshot = await getDocs(q);
+            for (const docSnap of querySnapshot.docs) {
+                if (!userData.collectedRewards.includes(docSnap.id)) {
+                    const data = docSnap.data();
+                    if (data.reward && data.reward > 0) {
+                        userData.totalCoins += data.reward;
+                    }
+                    if (data.rewardItem) {
+                        const { type, id } = data.rewardItem;
+                        if (type === 'snakeColors' && !userData.purchasedSnakeColors.includes(id)) {
+                            userData.purchasedSnakeColors.push(id);
+                        } else if (type === 'backgrounds' && !userData.purchasedBgs.includes(id)) {
+                            userData.purchasedBgs.push(id);
+                        }
+                    }
+                    userData.collectedRewards.push(docSnap.id);
+                    rewardsCollected = true;
+                }
+            }
+
+            if (rewardsCollected) {
+                coins = userData.totalCoins; // Update game's current coins
+                if(coinCountSpan) coinCountSpan.textContent = coins;
+                await saveUserData();
+                await renderNotifications(); // Re-render notifications to show updated status
+                await checkNotifications(user); // Update notification dot
+            }
+        }
+
+
+        window.sendNotification = async function(notificationData) { 
+            try { 
+                const notificationsCol = collection(db, 'notifications'); 
+                await addDoc(notificationsCol, { ...notificationData, timestamp: serverTimestamp() }); 
+                console.log("Notificação enviada com sucesso:", notificationData); 
+            } catch (error) { 
+                console.error("Erro ao enviar notificação:", error); 
+            } 
+        }
+
+        async function getLeaderboard() {
+            scoreList.innerHTML = '<li>Carregando...</li>';
+            try {
+                const q = query(collection(db, "users"), orderBy("highScore", "desc"), limit(10));
+                const querySnapshot = await getDocs(q);
+                scoreList.innerHTML = '';
+                if(querySnapshot.empty) { scoreList.innerHTML = '<li>Nenhuma pontuação registrada.</li>'; return; }
+                let rank = 1;
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const li = document.createElement('li');
+                    li.innerHTML = `<span class="rank">${rank++}.</span> <span class="name">${data.name || 'Jogador Anónimo'}</span> <span class="score">${data.highScore || 0}</span>`;
+                    scoreList.appendChild(li);
+                });
+            } catch (error) { console.error("Erro ao buscar placar:", error); scoreList.innerHTML = '<li>Erro ao carregar o placar.</li>'; }
+        }
+
+        function drawAppleShape(appleX, appleY, type) {
+            let colorLight, colorDark, glow;
+            let stemColor = getComputedStyle(document.documentElement).getPropertyValue('--apple-stem-color').trim();
+            let leafColor = getComputedStyle(document.documentElement).getPropertyValue('--apple-leaf-color').trim();
+
+            switch(type) {
+                case 'golden': glow = 'var(--golden-apple-glow)'; colorLight = '#FFD700'; colorDark = '#FDB813'; break;
+                case 'green': glow = 'var(--green-apple-glow)'; colorLight = '#2ecc71'; colorDark = '#27ae60'; break;
+                case 'blue': glow = 'var(--blue-apple-glow)'; colorLight = '#3498db'; colorDark = '#2980b9'; break;
+                case 'purple': glow = 'var(--purple-apple-glow)'; colorLight = '#9b59b6'; colorDark = '#8e44ad'; break;
+                case 'multiplier': // Multiplier Apple
+                    glow = 'var(--multiplier-apple-glow)'; 
+                    colorLight = '#FFD700'; // Golden color
+                    colorDark = '#FFA500'; // Darker orange
+                    break;
+                case 'ghost': // Ghost Apple
+                    glow = 'var(--ghost-apple-glow)'; 
+                    colorLight = '#F0F0F0'; // Light grey/white
+                    colorDark = '#A0A0A0'; // Mid-grey
+                    break;
+                case 'reverse': // Reverse Apple
+                    glow = 'var(--reverse-apple-glow)'; 
+                    colorLight = '#BA55D3'; // Medium Orchid (purplish)
+                    colorDark = '#4B0082'; // Indigo (dark purple)
+                    break;
+                default: // Default red apple
+                    glow = 'var(--food-glow)'; 
+                    colorLight = getComputedStyle(document.documentElement).getPropertyValue('--apple-color-light').trim();
+                    colorDark = getComputedStyle(document.documentElement).getPropertyValue('--apple-color-dark').trim();
+            }
+            const appleRadius = (gridSize / 2) * 0.95; 
+            
+            ctx.save();
+            ctx.shadowColor = glow; ctx.shadowBlur = 15;
+            ctx.beginPath();
+            ctx.arc(appleX, appleY, appleRadius, 0, Math.PI * 2);
+            const gradient = ctx.createRadialGradient(appleX - appleRadius * 0.2, appleY - appleRadius * 0.2, 0, appleX, appleY, appleRadius * 1.2);
+            gradient.addColorStop(0, colorLight); gradient.addColorStop(1, colorDark); ctx.fillStyle = gradient; ctx.fill();
+            
+            // Highlight/shine effect
+            ctx.beginPath();
+            ctx.arc(appleX - appleRadius * 0.4, appleY - appleRadius * 0.4, appleRadius * 0.25, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)'; ctx.fill();
+
+            // Always draw stem and leaf for all apple types
+            ctx.beginPath(); ctx.moveTo(appleX, appleY - appleRadius * 0.7);
+            ctx.strokeStyle = stemColor; ctx.lineWidth = 2;
+            ctx.quadraticCurveTo(appleX + 1, appleY - appleRadius * 1.5, appleX + 3, appleY - appleRadius * 1.4); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(appleX + 3, appleY - appleRadius * 1.4);
+            ctx.fillStyle = leafColor;
+            ctx.quadraticCurveTo(appleX + appleRadius * 0.7, appleY - appleRadius * 1.3, appleX + 3, appleY - appleRadius * 0.8); ctx.fill();
+            
+            ctx.restore();
+        }
+
+        function drawApple() { 
+            const appleX = food.x * gridSize + gridSize / 2; 
+            const appleY = food.y * gridSize + gridSize / 2; 
+            drawAppleShape(appleX, appleY, 'red'); 
+        }
+
+        function drawBonusApple(apple) { 
+            const appleX = apple.x * gridSize + gridSize / 2; 
+            const appleY = apple.y * gridSize + gridSize / 2; 
+            drawAppleShape(appleX, appleY, apple.type); 
+        }
+
+        function drawSnake() {
+            const snakeColor = snakeColors[userData.selectedSnakeColor].color;
+            ctx.save(); 
+            ctx.shadowColor = snakeColor; 
+            ctx.shadowBlur = 10;
+            
+            // Adjust drawing size based on shrinking power-up
+            const currentSnakeSize = gridSize * snakeScale;
+
+            if (snake.length > 1) {
+                 ctx.strokeStyle = snakeColor; 
+                 ctx.lineWidth = currentSnakeSize * 0.9; 
+                 ctx.lineCap = 'round'; 
+                 ctx.lineJoin = 'round';
+                 ctx.beginPath(); 
+                 ctx.moveTo(snake[0].x * gridSize + gridSize / 2, snake[0].y * gridSize + gridSize / 2);
+                 for (let i = 1; i < snake.length; i++) {
+                     const segment = snake[i]; 
+                     const prevSegment = snake[i-1];
+                     if(Math.abs(segment.x - prevSegment.x) > 1 || Math.abs(segment.y - prevSegment.y) > 1) {
+                         ctx.stroke(); 
+                         ctx.beginPath(); 
+                         ctx.moveTo(segment.x * gridSize + gridSize / 2, segment.y * gridSize + gridSize / 2);
+                     } else { ctx.lineTo(segment.x * gridSize + gridSize / 2, segment.y * gridSize + gridSize / 2); }
+                 }
+                 ctx.stroke();
+            }
+            // Draw head
+            const head = snake[0]; 
+            const headX = head.x * gridSize + gridSize / 2; 
+            const headY = head.y * gridSize + gridSize / 2;
+            ctx.beginPath(); ctx.arc(headX, headY, (currentSnakeSize / 2) * 0.9, 0, Math.PI * 2); ctx.fillStyle = snakeColor; ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Draw eyes
+            const eyeRadius = currentSnakeSize * 0.15; 
+            const pupilRadius = currentSnakeSize * 0.08;
+            let eye1X, eye1Y, eye2X, eye2Y, pupilOffsetX = 0, pupilOffsetY = 0;
+            const eyeDist = currentSnakeSize * 0.25;
+            if (direction.y === -1) { eye1X = headX - eyeDist; eye1Y = headY - eyeDist * 0.5; eye2X = headX + eyeDist; eye2Y = headY - eyeDist * 0.5; pupilOffsetY = -currentSnakeSize * 0.04;
+            } else if (direction.y === 1) { eye1X = headX - eyeDist; eye1Y = headY + eyeDist * 0.5; eye2X = headX + eyeDist; eye2Y = headY + eyeDist * 0.5; pupilOffsetY = currentSnakeSize * 0.04;
+            } else if (direction.x === -1) { eye1X = headX - eyeDist * 0.5; eye1Y = headY - eyeDist; eye2X = headX - eyeDist * 0.5; eye2Y = headY + eyeDist; pupilOffsetX = -currentSnakeSize * 0.04;
+            } else { eye1X = headX + eyeDist * 0.5; eye1Y = headY - eyeDist; eye2X = headX + eyeDist * 0.5; eye2Y = headY + eyeDist; pupilOffsetX = currentSnakeSize * 0.04; }
+            ctx.fillStyle = '#fff';
+            ctx.beginPath(); ctx.arc(eye1X, eye1Y, eyeRadius, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(eye2X, eye2Y, eyeRadius, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#1a0c2e';
+            ctx.beginPath(); ctx.arc(eye1X + pupilOffsetX, eye1Y + pupilOffsetY, pupilRadius, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(eye2X + pupilOffsetX, eye2Y + pupilOffsetY, pupilRadius, 0, Math.PI * 2); ctx.fill();
+            
+            // Draw tongue
+            if (tongueState.counter < tongueState.flickerDuration && (direction.x !== 0 || direction.y !== 0)) {
+                ctx.strokeStyle = '#ff3366'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+                const tongueLength = currentSnakeSize * 0.8; const tongueEndX = headX + direction.x * tongueLength; const tongueEndY = headY + direction.y * tongueLength;
+                ctx.beginPath(); ctx.moveTo(headX, headY); ctx.lineTo(tongueEndX, tongueEndY);
+                const forkLength = currentSnakeSize * 0.3;
+                if (direction.x !== 0) {
+                    ctx.moveTo(tongueEndX, tongueEndY); ctx.lineTo(tongueEndX - direction.x * forkLength * 0.5, tongueEndY - forkLength);
+                    ctx.moveTo(tongueEndX, tongueEndY); ctx.lineTo(tongueEndX - direction.x * forkLength * 0.5, tongueEndY + forkLength);
+                } else {
+                    ctx.moveTo(tongueEndX, tongueEndY); ctx.lineTo(tongueEndX - forkLength, tongueEndY - direction.y * forkLength * 0.5);
+                    ctx.moveTo(tongueEndX, tongueEndY); ctx.lineTo(tongueEndX + forkLength, tongueEndY - direction.y * forkLength * 0.5);
+                }
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function placeFood() {
+            const dpr = window.devicePixelRatio || 1; 
+            const gridWidth = canvas.width / dpr / gridSize; 
+            const gridHeight = canvas.height / dpr / gridSize;
+            do { food = { x: Math.floor(Math.random() * gridWidth), y: Math.floor(Math.random() * gridHeight) };
+            } while (snake.some(segment => segment.x === food.x && segment.y === food.y));
+        }
+
+        function spawnBonusApple() {
+            // Updated probability for bonus apples
+            const rand = Math.random(); 
+            let type;
+            if (rand < 0.15) type = 'purple'; // 15%
+            else if (rand < 0.30) type = 'blue'; // 15%
+            else if (rand < 0.45) type = 'golden'; // 15%
+            else if (rand < 0.60) type = 'green'; // 15%
+            else if (rand < 0.80) type = 'multiplier'; // 20% (as requested)
+            else if (rand < 0.90) type = 'ghost'; // 10%
+            else type = 'reverse'; // 10%
+
+            const dpr = window.devicePixelRatio || 1; 
+            const gridWidth = canvas.width / dpr / gridSize; 
+            const gridHeight = canvas.height / dpr / gridSize;
+            let bonusX, bonusY;
+            do { bonusX = Math.floor(Math.random() * gridWidth); bonusY = Math.floor(Math.random() * gridHeight);
+            } while (snake.some(s => s.x === bonusX && s.y === bonusY) || (food.x === bonusX && food.y === bonusY) || bonusApples.some(a => a.x === bonusX && a.y === bonusY));
+            const newApple = { x: bonusX, y: bonusY, type }; 
+            bonusApples.push(newApple);
+            // Different bonus apple types might have different despawn timers
+            let despawnTime = 7000; // Default 7 seconds
+            if (type === 'multiplier') despawnTime = 20000; // Multiplier apple lasts longer
+            else if (type === 'ghost') despawnTime = 15000;
+            else if (type === 'reverse') despawnTime = 5000;
+
+            setTimeout(() => { 
+                const index = bonusApples.findIndex(a => a.x === newApple.x && a.y === newApple.y); 
+                if (index !== -1) bonusApples.splice(index, 1); 
+            }, despawnTime); 
+        }
+
+        function activateBonus(type) {
+            const now = Date.now();
+            if (type === 'golden') { 
+                powerUps.wrap.active = true; powerUps.wrap.endTime = now + powerUps.wrap.duration; 
+                userData.gameStats.goldenApples++; 
+            } else if (type === 'green') { 
+                powerUps.immortal.active = true; powerUps.immortal.endTime = now + powerUps.immortal.duration; 
+                immortalityUsedInCurrentGame = true; 
+                userData.gameStats.greenApples++; 
+            } else if (type === 'blue') { 
+                powerUps.magnet.active = true; powerUps.magnet.endTime = now + powerUps.magnet.duration; 
+                userData.gameStats.blueApples++; 
+            } else if (type === 'purple') { 
+                let extraCoins = Math.floor(Math.random() * 11) + 10; 
+                if (powerUps.multiplier.active) extraCoins *= 2; // Use multiplier power-up here
+                coins += extraCoins; 
+                coinCountSpan.textContent = coins; 
+                userData.gameStats.purpleApples++; 
+            } else if (type === 'multiplier') { // Renamed from doubleLuck
+                powerUps.multiplier.active = true;
+                powerUps.multiplier.endTime = now + powerUps.multiplier.duration;
+                powerUps.multiplier.applesRemaining = 5; // Resets apples remaining for multiplier
+                userData.gameStats.multiplierApples++;
+            } else if (type === 'ghost') { // New Ghost Apple
+                powerUps.ghost.active = true;
+                powerUps.ghost.endTime = now + powerUps.ghost.duration;
+                userData.gameStats.ghostApples++;
+            } else if (type === 'reverse') { // New Reverse Apple
+                powerUps.reverse.active = true;
+                powerUps.reverse.endTime = now + powerUps.reverse.duration;
+                // Reverse current direction
+                direction = { x: -direction.x, y: -direction.y };
+                userData.gameStats.reverseApples++;
+            }
+            checkAchievements(); 
+        }
+
+        function checkPowerupEnd() {
+            const now = Date.now();
+
+            if (powerUps.wrap.active && now > powerUps.wrap.endTime) powerUps.wrap.active = false;
+            if (powerUps.immortal.active && now > powerUps.immortal.endTime) powerUps.immortal.active = false;
+            if (powerUps.magnet.active && now > powerUps.magnet.endTime) powerUps.magnet.active = false;
+            
+            // Handle Multiplier Apple end (renamed from doubleScore)
+            if (powerUps.multiplier.active && (now > powerUps.multiplier.endTime || powerUps.multiplier.applesRemaining <= 0)) {
+                powerUps.multiplier.active = false;
+            }
+
+            // Handle Ghost Apple end
+            if (powerUps.ghost.active && now > powerUps.ghost.endTime) {
+                powerUps.ghost.active = false;
+            }
+
+            // Handle Reverse Apple end
+            if (powerUps.reverse.active && now > powerUps.reverse.endTime) {
+                powerUps.reverse.active = false;
+                // Revert direction ONLY if it's currently reversed due to this power-up
+                // This might need more complex tracking if player changes direction manually while reversed.
+                // For simplicity, just reset to original direction logic (e.g. going right if no input)
+                // Or better, store previous non-reversed direction. For now, just deactivating.
+            }
+
+            // Shrinking Apple handling remains the same as it doesn't have timer changes based on pause
+            if (powerUps.shrinking.active && now > powerUps.shrinking.endTime) {
+                powerUps.shrinking.active = false;
+                snakeScale = 1; // Restore snake size
+                currentGameInterval = baseGameInterval; // Restore snake speed
+                clearInterval(gameInterval); // Clear old interval
+                gameInterval = setInterval(gameLoop, currentGameInterval); // Set new interval
+            }
+        }
+
+        function updatePowerupTimers() {
+            let activeTimers = []; 
+            const now = Date.Date(); // Corrected typo here
+            if (powerUps.wrap.active) { const remaining = Math.ceil((powerUps.wrap.endTime - now) / 1000); if (remaining > 0) activeTimers.push(`Portal: ${remaining}s`); }
+            if (powerUps.immortal.active) { const remaining = Math.ceil((powerUps.immortal.endTime - now) / 1000); if (remaining > 0) activeTimers.push(`Escudo: ${remaining}s`); }
+            if (powerUps.magnet.active) { const remaining = Math.ceil((powerUps.magnet.endTime - now) / 1000); if (remaining > 0) activeTimers.push(`Íman: ${remaining}s`); }
+            
+            // New Power-up timers
+            if (powerUps.multiplier.active) { 
+                const remainingTime = Math.ceil((powerUps.multiplier.endTime - now) / 1000);
+                if (remainingTime > 0) {
+                     activeTimers.push(`Multiplicador: ${powerUps.multiplier.applesRemaining} maçãs ou ${remainingTime}s`); 
+                }
+            }
+            if (powerUps.ghost.active) {
+                const remaining = Math.ceil((powerUps.ghost.endTime - now) / 1000);
+                if (remaining > 0) activeTimers.push(`Fantasma: ${remaining}s`);
+            }
+            if (powerUps.reverse.active) {
+                const remaining = Math.ceil((powerUps.reverse.endTime - now) / 1000);
+                if (remaining > 0) activeTimers.push(`Reverter: ${remaining}s`);
+            }
+            if (powerUps.shrinking.active) { 
+                const remaining = Math.ceil((powerUps.shrinking.endTime - now) / 1000); 
+                if (remaining > 0) activeTimers.push(`Encolhida: ${remaining}s`); 
+            }
+
+            if (activeTimers.length > 0) { 
+                powerupTimerDisplay.innerHTML = activeTimers.map(t => `<div class="timer-item">${t}</div>`).join(''); 
+                powerupTimerDisplay.classList.remove('hidden');
+            } else { 
+                powerupTimerDisplay.classList.add('hidden'); 
+            }
+        }
+
+        function setDirection(newDirection) {
+            if (isPaused || powerUps.reverse.active) { // Added check for Reverse Apple
+                // If reverse is active, process reversed input
+                if (powerUps.reverse.active) {
+                    const currentDir = direction;
+                    if (newDirection === 'left' && currentDir.x !== 1) direction = { x: -1, y: 0 };
+                    else if (newDirection === 'up' && currentDir.y !== 1) direction = { x: 0, y: -1 };
+                    else if (newDirection === 'right' && currentDir.x !== -1) direction = { x: 1, y: 0 };
+                    else if (newDirection === 'down' && currentDir.y !== -1) direction = { x: 0, y: 1 };
+                }
+                return; 
+            }
+            const goingUp = direction.y === -1, goingDown = direction.y === 1, goingRight = direction.x === 1, goingLeft = direction.x === -1;
+            if (newDirection === 'left' && !goingRight) direction = { x: -1, y: 0 };
+            if (newDirection === 'up' && !goingDown) direction = { x: 0, y: -1 };
+            if (newDirection === 'right' && !goingLeft) direction = { x: 1, y: 0 };
+            if (newDirection === 'down' && !goingUp) direction = { x: 0, y: 1 };
+        }
+
+        function handleKeyInput(event) {
+            const keyPressed = event.key.toLowerCase(); 
+            if (keyPressed === 'p') { togglePause(); return; }
+            if (gameSettings.controlMode !== 'keyboard' || isPaused) return; // Removed powerUps.chrono.active check
+            if (['arrowleft', 'a'].includes(keyPressed)) setDirection('left');
+            if (['arrowup', 'w'].includes(keyPressed)) setDirection('up');
+            if (['arrowright', 'd'].includes(keyPressed)) setDirection('right');
+            if (['arrowdown', 's'].includes(keyPressed)) setDirection('down');
+        }
+
+        function handleTouchStart(event) {
+            if (gameSettings.controlMode !== 'touch' || isPaused || buttons.pause.contains(event.target)) return; // Removed powerUps.chrono.active check
+            event.preventDefault(); 
+            touchStartX = event.touches[0].clientX; 
+            touchStartY = event.touches[0].clientY;
+        }
+
+        function handleTouchEnd(event) {
+            if (gameSettings.controlMode !== 'touch' || touchStartX === 0 || isPaused || buttons.pause.contains(event.target)) return; // Removed powerUps.chrono.active check
+            const touchEndX = event.changedTouches[0].clientX, touchEndY = event.changedTouches[0].clientY;
+            const diffX = touchEndX - touchStartX, diffY = touchEndY - touchStartY;
+            // Determine direction based on current and potentially reversed controls
+            let targetDirection = '';
+            if (Math.abs(diffX) > Math.abs(diffY)) { 
+                targetDirection = diffX > 0 ? 'right' : 'left';
+            } else { 
+                targetDirection = diffY > 0 ? 'down' : 'up'; 
+            }
+            setDirection(targetDirection); // Use setDirection to handle reversal
+            touchStartX = 0; 
+            touchStartY = 0;
+        }
+
+        function checkCollision() {
+            const head = snake[0]; 
+            const dpr = window.devicePixelRatio || 1;
+            const gridWidth = canvas.width / dpr / gridSize; 
+            const gridHeight = canvas.height / dpr / gridSize;
+            if (!powerUps.wrap.active && (head.x < 0 || head.x >= gridWidth || head.y < 0 || head.y >= gridHeight)) return true;
+            
+            // Only check self-collision if immortality OR ghost mode is NOT active
+            if (!powerUps.immortal.active && !powerUps.ghost.active) { // Added powerUps.ghost.active
+                for (let i = 1; i < snake.length; i++) { 
+                    if (head.x === snake[i].x && head.y === snake[i].y) return true; 
+                } 
+            }
+            return false;
+        }
+
+        function togglePause() {
+            if (isPaused) {
+                const now = Date.now();
+                // Resume durations by adding elapsed time back
+                if(powerUps.wrap.active) powerUps.wrap.endTime = now + powerUps.wrap.duration;
+                if(powerUps.immortal.active) powerUps.immortal.endTime = now + powerUps.immortal.duration;
+                if(powerUps.magnet.active) powerUps.magnet.endTime = now + powerUps.magnet.duration;
+                if(powerUps.multiplier.active) powerUps.multiplier.endTime = now + powerUps.multiplier.duration; // Renamed
+                if(powerUps.shrinking.active) powerUps.shrinking.endTime = now + powerUps.shrinking.duration;
+                if(powerUps.ghost.active) powerUps.ghost.endTime = now + powerUps.ghost.duration; // New
+                if(powerUps.reverse.active) powerUps.reverse.endTime = now + powerUps.reverse.duration; // New
+
+                // Restart game loop with current interval
+                gameInterval = setInterval(gameLoop, currentGameInterval);
+
+            } else {
+                clearInterval(gameInterval);
+                const now = Date.now(); 
+                // Store remaining durations
+                if(powerUps.wrap.active) powerUps.wrap.duration = powerUps.wrap.endTime - now;
+                if(powerUps.immortal.active) powerUps.immortal.duration = powerUps.immortal.endTime - now;
+                if(powerUps.magnet.active) powerUps.magnet.duration = powerUps.magnet.endTime - now;
+                if(powerUps.multiplier.active) powerUps.multiplier.duration = powerUps.multiplier.endTime - now; // Renamed
+                if(powerUps.shrinking.active) powerUps.shrinking.duration = powerUps.shrinking.endTime - now;
+                if(powerUps.ghost.active) powerUps.ghost.duration = powerUps.ghost.endTime - now; // New
+                if(powerUps.reverse.active) powerUps.reverse.duration = powerUps.reverse.endTime - now; // New
+            }
+            isPaused = !isPaused;
+            pauseOverlay.classList.toggle('hidden'); 
+            pauseIcon.classList.toggle('hidden'); 
+            playIcon.classList.toggle('hidden');
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                userProfile.classList.remove('hidden'); 
+                userPhoto.src = user.photoURL;
+                buttons.login.classList.add('hidden'); 
+                buttons.logout.classList.remove('hidden');
+                await loadUserData(user);
+                if (!userData.usernameIsSet) {
+                    showScreen(screens.username);
+                } else {
+                    userName.textContent = userData.name;
+                }
+            } else {
+                userProfile.classList.add('hidden'); 
+                buttons.login.classList.remove('hidden'); 
+                buttons.logout.classList.add('hidden'); 
+                buttons.notificationBell.classList.add('hidden');
+                loadLocalData();
+            }
+            applyAllCustomizations();
+            checkNotifications(user); 
+        });
+
+        async function loadUserData(user) {
+            const localCoins = parseInt(localStorage.getItem('ssnake_coins')) || 0;
+            const localBgs = JSON.parse(localStorage.getItem('ssnake_bgs')) || [];
+            const localColors = JSON.parse(localStorage.getItem('ssnake_colors')) || [];
+            const localHighScore = parseInt(localStorage.getItem('ssnake_highscore')) || 0;
+            const localAchievements = JSON.parse(localStorage.getItem('ssnake_achievements')) || {}; 
+            const localGameStats = JSON.parse(localStorage.getItem('ssnake_gameStats')) || {}; 
+            const localCollectedRewards = JSON.parse(localStorage.getItem('ssnake_collectedRewards')) || []; 
+
+            const userRef = doc(db, "users", user.uid);
+            const userDoc = await getDoc(userRef);
+
+            const defaultGameStats = { // Define default stats to ensure all keys exist
+                applesEaten: 0, goldenApples: 0, greenApples: 0, blueApples: 0, purpleApples: 0,
+                multiplierApples: 0, // Renamed
+                ghostApples: 0, // New
+                reverseApples: 0, // New
+                gamesPlayed: 0, maxScoreNoSelfCollision: 0, maxSnakeLength: 0
+            };
+
+            const defaultData = {
+                name: user.displayName, 
+                photoURL: user.photoURL, 
+                highScore: 0, 
+                totalCoins: 0,
+                purchasedBgs: ['default'], 
+                selectedBg: 'default',
+                purchasedSnakeColors: ['default'], 
+                selectedSnakeColor: 'default', 
+                collectedRewards: [], 
+                usernameIsSet: false,
+                achievements: {}, 
+                gameStats: defaultGameStats // Initialize with all default stats
+            };
+
+            let cloudData;
+            if (userDoc.exists()) {
+                cloudData = { ...defaultData, ...userDoc.data() };
+                // Ensure cloudData.gameStats also has all default keys
+                cloudData.gameStats = { ...defaultGameStats, ...cloudData.gameStats };
+                // Handle potential old 'doubleLuckApples' stat and migrate it to 'multiplierApples'
+                if (cloudData.gameStats.doubleLuckApples !== undefined && cloudData.gameStats.multiplierApples === undefined) {
+                    cloudData.gameStats.multiplierApples = cloudData.gameStats.doubleLuckApples;
+                    delete cloudData.gameStats.doubleLuckApples; // Clean up old stat
+                }
+            } else {
+                cloudData = defaultData;
+            }
+            
+            // Merge local data with cloud data
+            cloudData.totalCoins = Math.max(cloudData.totalCoins, localCoins); 
+            cloudData.purchasedBgs = [...new Set([...cloudData.purchasedBgs, ...localBgs])];
+            cloudData.purchasedSnakeColors = [...new Set([...cloudData.purchasedSnakeColors, ...localColors])];
+            if (localHighScore > (cloudData.highScore || 0)) {
+                cloudData.highScore = localHighScore;
+            }
+
+            // Merge game stats (sum up where appropriate, take max for others)
+            for (const key in localGameStats) {
+                // Handle old 'doubleLuckApples' stat during merge
+                let statKey = key;
+                if (key === 'doubleLuckApples') statKey = 'multiplierApples';
+
+                if (['applesEaten', 'goldenApples', 'greenApples', 'blueApples', 'purpleApples', 'multiplierApples', 'ghostApples', 'reverseApples', 'gamesPlayed'].includes(statKey)) { 
+                    cloudData.gameStats[statKey] = (cloudData.gameStats[statKey] || 0) + (localGameStats[key] || 0);
+                } else if (['maxScoreNoSelfCollision', 'maxSnakeLength'].includes(statKey)) {
+                    cloudData.gameStats[statKey] = Math.max((cloudData.gameStats[statKey] || 0), (localGameStats[key] || 0));
+                } else {
+                    cloudData.gameStats[statKey] = cloudData.gameStats[statKey] || localGameStats[key]; 
+                }
+            }
+
+            // Merge achievements: cloud takes precedence for 'collected' status if already true
+            for (const achId in localAchievements) {
+                // Handle old achievement IDs if needed (e.g., if doubleLuck achievements changed ID)
+                // For now, assuming new achievements will just be new IDs.
+                if (!cloudData.achievements[achId]) {
+                    cloudData.achievements[achId] = { ...localAchievements[achId] };
+                } else {
+                    // Merge progress (take max) and collected status (if true in either, keep true)
+                    cloudData.achievements[achId].progress = Math.max(
+                        cloudData.achievements[achId].progress || 0,
+                        localAchievements[achId].progress || 0
+                    );
+                    cloudData.achievements[achId].completed = (cloudData.achievements[achId].completed || false) || (localAchievements[achId].completed || false); 
+                    cloudData.achievements[achId].collected = (cloudData.achievements[achId].collected || false) || (localAchievements[achId].collected || false);
+                }
+            }
+            
+            // Merge collectedRewards: unique union
+            cloudData.collectedRewards = [...new Set([...(cloudData.collectedRewards || []), ...(localCollectedRewards || [])])];
+
+
+            // Initialize achievement states if they don't exist in cloudData 
+            achievementsData.forEach(ach => {
+                if (!cloudData.achievements[ach.id]) {
+                    cloudData.achievements[ach.id] = { progress: 0, completed: false, collected: false };
+                }
+            });
+
+            userData = cloudData;
+            await setDoc(userRef, userData, { merge: true });
+
+            // Clear local storage after merging
+            localStorage.removeItem('ssnake_coins');
+            localStorage.removeItem('ssnake_bgs');
+            localStorage.removeItem('ssnake_colors');
+            localStorage.removeItem('ssnake_highscore');
+            localStorage.removeItem('ssnake_achievements'); 
+            localStorage.removeItem('ssnake_gameStats'); 
+            localStorage.removeItem('ssnake_collectedRewards'); 
+
+            console.log("User data loaded and merged:", userData);
+            await checkNotifications(user);
+        }
+
+        function loadLocalData() {
+            userData.totalCoins = parseInt(localStorage.getItem('ssnake_coins')) || 0;
+            userData.highScore = parseInt(localStorage.getItem('ssnake_highscore')) || 0;
+            userData.selectedBg = localStorage.getItem('ssnake_selected_bg') || 'default';
+            userData.purchasedBgs = JSON.parse(localStorage.getItem('ssnake_bgs')) || ['default'];
+            userData.selectedSnakeColor = localStorage.getItem('ssnake_selected_color') || 'default';
+            userData.purchasedSnakeColors = JSON.parse(localStorage.getItem('ssnake_colors')) || ['default'];
+            userData.achievements = JSON.parse(localStorage.getItem('ssnake_achievements')) || {}; 
+            userData.gameStats = JSON.parse(localStorage.getItem('ssnake_gameStats')) || {}; 
+            userData.collectedRewards = JSON.parse(localStorage.getItem('ssnake_collectedRewards')) || []; 
+
+            // Ensure gameStats has all properties, initializing if missing
+            const defaultGameStats = {
+                applesEaten: 0, goldenApples: 0, greenApples: 0, blueApples: 0, purpleApples: 0,
+                multiplierApples: 0, ghostApples: 0, reverseApples: 0, // New stats
+                gamesPlayed: 0, maxScoreNoSelfCollision: 0, maxSnakeLength: 0
+            };
+            userData.gameStats = { ...defaultGameStats, ...userData.gameStats };
+
+            // Initialize achievement states if they don't exist in localData
+            achievementsData.forEach(ach => {
+                if (!userData.achievements[ach.id]) {
+                    userData.achievements[ach.id] = { progress: 0, completed: false, collected: false };
+                }
+            });
+
+            console.log("Local user data loaded:", userData);
+        }
+
+        async function saveUserData() {
+            const user = auth.currentUser;
+            const dataToSave = {
+                highScore: userData.highScore, 
+                totalCoins: userData.totalCoins,
+                purchasedBgs: userData.purchasedBgs, 
+                selectedBg: userData.selectedBg,
+                purchasedSnakeColors: userData.purchasedSnakeColors, 
+                selectedSnakeColor: userData.selectedSnakeColor,
+                collectedRewards: userData.collectedRewards, 
+                name: userData.name, 
+                usernameIsSet: userData.usernameIsSet,
+                achievements: userData.achievements, 
+                gameStats: userData.gameStats 
+            };
+            if (user) {
+                try { 
+                    await setDoc(doc(db, "users", user.uid), dataToSave, { merge: true }); 
+                    console.log("User data saved to Firebase.");
+                } catch(e) { 
+                    console.error("Error saving user data to Firebase:", e); 
+                }
+            } else {
+                localStorage.setItem('ssnake_coins', dataToSave.totalCoins);
+                localStorage.setItem('ssnake_bgs', JSON.stringify(dataToSave.purchasedBgs));
+                localStorage.setItem('ssnake_selected_bg', dataToSave.selectedBg);
+                localStorage.setItem('ssnake_colors', JSON.stringify(dataToSave.purchasedSnakeColors));
+                localStorage.setItem('ssnake_selected_color', dataToSave.selectedSnakeColor);
+                localStorage.setItem('ssnake_highscore', dataToSave.highScore);
+                localStorage.setItem('ssnake_achievements', JSON.stringify(dataToSave.achievements)); 
+                localStorage.setItem('ssnake_gameStats', JSON.stringify(dataToSave.gameStats)); 
+                localStorage.setItem('ssnake_collectedRewards', JSON.stringify(dataToSave.collectedRewards)); 
+                console.log("User data saved to Local Storage.");
+            }
+        }
+
+        // NEW: Function to check and unlock achievements
+        async function checkAchievements() {
+            let achievementsUpdated = false;
+            for (const ach of achievementsData) {
+                if (userData.achievements[ach.id] && !userData.achievements[ach.id].completed) {
+                    let currentProgress = 0;
+                    switch (ach.type) {
+                        case 'score':
+                            currentProgress = score; 
+                            break;
+                        case 'applesEaten':
+                            currentProgress = userData.gameStats.applesEaten; 
+                            break;
+                        case 'goldenApples':
+                            currentProgress = userData.gameStats.goldenApples;
+                            break;
+                        case 'greenApples':
+                            currentProgress = userData.gameStats.greenApples;
+                            break;
+                        case 'blueApples':
+                            currentProgress = userData.gameStats.blueApples;
+                            break;
+                        case 'purpleApples':
+                            currentProgress = userData.gameStats.purpleApples;
+                            break;
+                        case 'multiplierApples': 
+                            currentProgress = userData.gameStats.multiplierApples;
+                            break;
+                        case 'ghostApples': 
+                            currentProgress = userData.gameStats.ghostApples;
+                            break;
+                        case 'reverseApples': 
+                            currentProgress = userData.gameStats.reverseApples;
+                            break;
+                        case 'gamesPlayed':
+                            currentProgress = userData.gameStats.gamesPlayed;
+                            break;
+                        case 'noSelfCollisionScore':
+                            currentProgress = userData.gameStats.maxScoreNoSelfCollision; 
+                            break;
+                        case 'snakeLength':
+                            currentProgress = userData.gameStats.maxSnakeLength; 
+                            break;
+                        case 'totalCoins':
+                            currentProgress = userData.totalCoins; 
+                            break;
+                    }
+                    
+                    userData.achievements[ach.id].progress = Math.min(currentProgress, ach.target); 
+                    
+                    if (currentProgress >= ach.target) {
+                        userData.achievements[ach.id].completed = true;
+                        achievementsUpdated = true;
+                        console.log(`Conquista Desbloqueada: ${ach.name}`);
+                        if (!userData.achievements[ach.id].collected) {
+                            checkNotifications(auth.currentUser); 
+                        }
+                    }
+                }
+            }
+            if (achievementsUpdated) {
+                await saveUserData();
+            }
+        }
+
+        function addSafeListener(element, handler) { 
+            if (element) { 
+                element.addEventListener('click', handler); 
+                element.addEventListener('touchstart', (e) => { e.preventDefault(); handler(e); }, { passive: false }); 
+            } 
+        }
+
+        function showScreen(screen) { 
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden')); 
+            screen.classList.remove('hidden'); 
+        }
+
+        function updateOptionButtons() {
+            document.querySelectorAll('[data-control]').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`[data-control="${gameSettings.controlMode}"]`).classList.add('active');
+            document.querySelectorAll('[data-ratio]').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`[data-ratio="${gameSettings.aspectRatio}"]`).classList.add('active');
+        }
+
+        function applyAllCustomizations() { 
+            applyBackground(); 
+        }
+
+        const showOptionsHandler = () => { previousScreen = screens.start; updateOptionButtons(); showScreen(screens.options); };
+        const showTipsHandler = () => { previousScreen = screens.start; showScreen(screens.tips); };
+        const showShopHandler = () => { previousScreen = screens.start; renderShop('backgrounds'); showScreen(screens.shop); };
+        const showNotificationHandler = () => { previousScreen = screens.start; renderNotifications(); showScreen(screens.notifications); };
+        const showAchievementsHandler = () => { previousScreen = screens.start; renderAchievements('Fácil'); showScreen(screens.achievements); }; 
+        const handlePauseOptions = () => { pauseOverlay.classList.add('hidden'); previousScreen = screens.game; updateOptionButtons(); showScreen(screens.options); };
+        const pauseHomeHandler = () => { endGame(false); showScreen(screens.start); };
+
+        function setupCanvas() {
+            const dpr = window.devicePixelRatio || 1; 
+            const topBarHeight = topBar.offsetHeight || 60;
+            const containerWidth = screens.game.clientWidth; 
+            const containerHeight = screens.game.clientHeight - topBarHeight;
+            let canvasWidth, canvasHeight;
+            if (gameSettings.aspectRatio === 'notebook') { 
+                const canvasSize = Math.min(containerWidth, containerHeight); 
+                canvasWidth = Math.floor(canvasSize / gridSize) * gridSize; 
+                canvasHeight = canvasWidth;
+            } else { 
+                const baseSize = Math.min(containerWidth, containerHeight); 
+                canvasWidth = Math.floor(baseSize / gridSize) * gridSize; 
+                canvasHeight = Math.floor((canvasWidth * 14 / 9) / gridSize) * gridSize; 
+            }
+            canvas.width = canvasWidth * dpr; 
+            canvas.height = canvasHeight * dpr;
+            canvas.style.width = `${canvasWidth}px`; 
+            canvas.style.height = `${canvasHeight}px`;
+            ctx.scale(dpr, dpr); 
+            topBar.style.width = `${canvasWidth}px`;
+        }
+
+        function startGame() {
+            showScreen(screens.game); 
+            isPaused = false;
+            topBar.classList.remove('hidden'); 
+            pauseOverlay.classList.add('hidden');
+            pauseIcon.classList.remove('hidden'); 
+            playIcon.classList.add('hidden');
+            setupCanvas();
+            const dpr = window.devicePixelRatio || 1;
+            snake = [{ x: Math.floor((canvas.width / dpr / gridSize) / 2), y: Math.floor((canvas.height / dpr / gridSize) / 2) }];
+            score = 0; 
+            coins = userData.totalCoins; 
+            direction = { x: 1, y: 0 }; // Cobra começa se movendo para a direita
+
+            // Reset game-specific temporary stats
+            scoreAchievedWithoutImmortality = 0;
+            maxSnakeLengthInCurrentGame = 1;
+            immortalityUsedInCurrentGame = false;
+            snakeScale = 1; // Reset snake scale
+            currentGameInterval = baseGameInterval; // Reset game speed
+
+            // Reset all power-up states
+            Object.keys(powerUps).forEach(key => { 
+                powerUps[key].active = false; 
+                powerUps[key].endTime = 0; 
+            });
+            powerUps.multiplier.applesRemaining = 5; // Reset for multiplier power-up
+
+            scoreDisplay.textContent = `Score: ${score}`; // Display initial score
+            coinCountSpan.textContent = coins;
+            placeFood();
+            bonusApples = [];
+            powerupTimerDisplay.classList.add('hidden');
+
+            if (gameInterval) clearInterval(gameInterval);
+            gameInterval = setInterval(gameLoop, currentGameInterval);
+            document.addEventListener('keydown', handleKeyInput);
+            screens.game.addEventListener('touchstart', handleTouchStart, { passive: false });
+            screens.game.addEventListener('touchmove', preventDefaultHandler, { passive: false });
+            screens.game.addEventListener('touchend', handleTouchEnd);
+        }
+
+        function gameLoop() { 
+            // checkPowerupEnd() is called first within update() now.
+            if(isPaused) return; 
+            
+            update(); 
+            draw(); 
+        }
+
+        function update() { 
+            checkPowerupEnd(); // Moved here to be called at the beginning of each update cycle
+
+            // Calculate next head position first
+            let nextHeadX = snake[0].x + direction.x;
+            let nextHeadY = snake[0].y + direction.y;
+
+            const dpr = window.devicePixelRatio || 1; 
+            const gridWidth = canvas.width / dpr / gridSize; 
+            const gridHeight = canvas.height / dpr / gridSize;
+
+            // Apply wrap-around if active
+            if (powerUps.wrap.active) {
+                if (nextHeadX < 0) nextHeadX = gridWidth - 1; else if (nextHeadX >= gridWidth) nextHeadX = 0;
+                if (nextHeadY < 0) nextHeadY = gridHeight - 1; else if (nextHeadY >= gridHeight) nextHeadY = 0;
+            }
+
+            let newHead = { x: nextHeadX, y: nextHeadY };
+
+            // Apply magnet effect BEFORE moving the snake to its new position
+            if (powerUps.magnet.active) {
+                const magnetRange = 4; 
+                const applyMagnetToApple = (apple) => {
+                    if (!apple) return;
+                    // Directly move the apple to the new head position if it's within magnet range
+                    // This ensures "eat on touch" behavior
+                    let distanceX = newHead.x - apple.x;
+                    let distanceY = newHead.y - apple.y;
+
+                    // If the apple is within 1 unit of the new head position (adjacent or on top)
+                    if (Math.abs(distanceX) <= 1 && Math.abs(distanceY) <= 1) {
+                         apple.x = newHead.x;
+                         apple.y = newHead.y;
+                    } else if (Math.abs(distanceX) + Math.abs(distanceY) <= magnetRange) {
+                        // Move apple one step closer towards the new head position
+                        if (distanceX !== 0) apple.x += Math.sign(distanceX);
+                        if (distanceY !== 0) apple.y += Math.sign(distanceY);
+                    }
+                };
+                applyMagnetToApple(food); 
+                bonusApples.forEach(applyMagnetToApple); 
+            }
+            
+            // Now, actually move the snake to the new head position
+            snake.unshift(newHead);
+            tongueState.counter = (tongueState.counter + 1) % tongueState.flickerInterval;
+            
+            let ateSomething = false;
+
+            // Check bonus apples first for eating at the NEW head position
+            for (let i = bonusApples.length - 1; i >= 0; i--) {
+                const apple = bonusApples[i]; 
+                // Check if the NEW head (snake[0]) is on the apple
+                if (snake[0].x === apple.x && snake[0].y === apple.y) {
+                    ateSomething = true;
+                    activateBonus(apple.type);
+                    bonusApples.splice(i, 1);
+                }
+            }
+
+            // Check normal apple for eating at the NEW head position
+            // Only check if nothing was eaten yet from bonus apples to prevent eating two apples in one step
+            if (!ateSomething && snake[0].x === food.x && snake[0].y === food.y) {
+                ateSomething = true;
+                let scoreIncrease = 1;
+                let coinIncrease = 1;
+                if (powerUps.multiplier.active) { // Used multiplier here
+                    scoreIncrease *= 2;
+                    coinIncrease *= 2;
+                    powerUps.multiplier.applesRemaining--;
+                }
+                score += scoreIncrease;
+                coins += coinIncrease;
+                
+                scoreDisplay.textContent = `Score: ${score}`;
+                coinCountSpan.textContent = coins;
+                userData.gameStats.applesEaten++; 
+                placeFood();
+                spawnBonusApple();
+            }
+
+            if (!ateSomething) {
+                // Diminui o crescimento da cobra: remove um segmento a cada 2 maçãs normais comidas
+                // OU a cada atualização se não comer maçã.
+                // Para diminuir o crescimento, podemos fazer `snake.pop()` SEMPRE exceto quando come uma maçã,
+                // e para reduzir AINDA MAIS o crescimento, podemos fazer a cobra crescer menos de 1 unidade por maçã.
+                // A ideia é que a cobra cresça 1 unidade a cada 2 maçãs (por exemplo)
+                // Se a cobra não comeu nada, ela encolhe. Isso já está funcionando.
+                // Para "crescer menos rápido", a solução mais simples é mudar a frequência de pop.
+                // Ou, um Segmento a cada 2 Maçãs.
+                // Let's implement grow every 2 normal apples.
+                if (score % 2 !== 0 || !ateSomething) { // Simplified growth rate
+                     snake.pop(); // Remove tail if not eating or every second apple (simplification)
+                }
+
+            }
+
+            // Update current game's max snake length
+            maxSnakeLengthInCurrentGame = Math.max(maxSnakeLengthInCurrentGame, snake.length);
+
+            // Update current game's score if immortality was not active
+            // This is done before the checkCollision, ensuring score is tracked even if collision happens this frame
+            if (!powerUps.immortal.active) { 
+                scoreAchievedWithoutImmortality = Math.max(scoreAchievedWithoutImmortality, score);
+            } else {
+                 immortalityUsedInCurrentGame = true; // Flag if immortality was active at any point
+            }
+
+
+            if (checkCollision()) { 
+                endGame(); 
+            }
+            checkAchievements(); 
+        }
+
+        function draw() {
+            const dpr = window.devicePixelRatio || 1;
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim();
+            ctx.fillRect(0, 0, canvas.width / dpr, canvas.height / dpr);
+            drawApple(); 
+            bonusApples.forEach(drawBonusApple); 
+            drawSnake(); 
+            updatePowerupTimers();
+        }
+
+        async function endGame(showGameOverScreen = true) {
+            clearInterval(gameInterval); 
+            gameInterval = null;
+            document.removeEventListener('keydown', handleKeyInput);
+            screens.game.removeEventListener('touchstart', handleTouchStart);
+            screens.game.removeEventListener('touchmove', preventDefaultHandler);
+            screens.game.removeEventListener('touchend', handleTouchEnd);
+            
+            userData.totalCoins = coins;
+            if(score > userData.highScore) { 
+                userData.highScore = score; 
+            }
+            userData.gameStats.gamesPlayed++; 
+
+            // Update global gameStats with current game's highest values
+            userData.gameStats.maxSnakeLength = Math.max(userData.gameStats.maxSnakeLength, maxSnakeLengthInCurrentGame);
+            
+            // Only update maxScoreNoSelfCollision if immortality was NOT used in this game
+            if (!immortalityUsedInCurrentGame) { 
+                userData.gameStats.maxScoreNoSelfCollision = Math.max(userData.gameStats.maxScoreNoSelfCollision, scoreAchievedWithoutImmortality);
+            }
+            
+            await saveUserData();
+            await checkNotifications(auth.currentUser); 
+            if (showGameOverScreen) {
+                topBar.classList.add('hidden');
+                finalScoreDisplay.textContent = `Seu Score: ${score}`;
+                showScreen(screens.gameOver);
+            }
+        }
+
+        function applyBackground() { 
+            document.body.className = `background-${userData.selectedBg}`; 
+        }
+
+        function renderShop(activeTab) {
+            shopItemsContainer.innerHTML = '';
+            document.querySelectorAll('.shop-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.shop-tab[data-tab="${activeTab}"]`).classList.add('active');
+            const items = shopItems[activeTab];
+            const purchasedItems = activeTab === 'backgrounds' ? userData.purchasedBgs : userData.purchasedSnakeColors;
+            const selectedItem = activeTab === 'backgrounds' ? userData.selectedBg : userData.selectedSnakeColor;
+            const defaultId = 'default';
+            const defaultItem = activeTab === 'backgrounds' ? { id: defaultId, name: 'Padrão' } : { id: defaultId, name: 'Magenta Padrão' };
+            const allDisplayItems = [defaultItem, ...items];
+
+            allDisplayItems.filter(item => item.id === 'default' || purchasedItems.includes(item.id)).forEach(item => {
+                const itemEl = document.createElement('div'); 
+                itemEl.className = 'shop-item';
+                const isSelected = item.id === selectedItem;
+                let previewHtml = '';
+                if(activeTab === 'snakeColors') { previewHtml = `<div class="color-preview" style="background-color: ${snakeColors[item.id].color};"></div>`; }
+                let buttonHtml;
+                if (isSelected) { buttonHtml = `<button class="menu-button active" disabled>Selecionado</button>`; } 
+                else { buttonHtml = `<button class="menu-button" data-select-id="${item.id}" data-type="${activeTab}">Selecionar</button>`; }
+                itemEl.innerHTML = `<div class="shop-item-details">${previewHtml}<h3>${item.name}</h3></div> ${buttonHtml}`;
+                shopItemsContainer.appendChild(itemEl);
+            });
+
+            items.filter(item => !purchasedItems.includes(item.id)).forEach(item => {
+                const itemEl = document.createElement('div'); 
+                itemEl.className = 'shop-item';
+                const canAfford = userData.totalCoins >= item.price;
+                let previewHtml = '';
+                if(activeTab === 'snakeColors') { previewHtml = `<div class="color-preview" style="background-color: ${snakeColors[item.id].color};"></div>`; }
+                const buttonHtml = `<button class="menu-button" data-item-id="${item.id}" data-price="${item.price}" data-type="${activeTab}" ${canAfford ? '' : 'disabled'}>S$ ${item.price}</button>`;
+                itemEl.innerHTML = `<div class="shop-item-details">${previewHtml}<h3>${item.name}</h3></div> ${buttonHtml}`;
+                shopItemsContainer.appendChild(itemEl);
+            });
+        }
+
+        async function selectItem(itemId, type) {
+            if (type === 'backgrounds') { 
+                userData.selectedBg = itemId; applyBackground(); 
+            } else if (type === 'snakeColors') { 
+                userData.selectedSnakeColor = itemId; 
+            }
+            await saveUserData(); 
+            renderShop(type);
+        }
+
+        async function buyItem(itemId, price, type) {
+            if (userData.totalCoins >= price) {
+                userData.totalCoins -= price;
+                if (type === 'backgrounds') { userData.purchasedBgs.push(itemId); } 
+                else if (type === 'snakeColors') { userData.purchasedSnakeColors.push(itemId); }
+                coinCountSpan.textContent = userData.totalCoins;
+                await saveUserData();
+                await selectItem(itemId, type);
+            } else {
+                const button = document.querySelector(`[data-item-id="${itemId}"]`);
+                if(button) { button.classList.add('shake'); setTimeout(() => button.classList.remove('shake'), 300); }
+            }
+        }
+
+        // NEW: Function to render achievements
+        function renderAchievements(activeTab) {
+            achievementsListContainer.innerHTML = '';
+            document.querySelectorAll('.achievement-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.achievement-tab[data-tab="${activeTab}"]`).classList.add('active');
+
+            const achievementsForDifficulty = achievementsByDifficulty[activeTab];
+
+            if (!achievementsForDifficulty || achievementsForDifficulty.length === 0) {
+                achievementsListContainer.innerHTML = `<p class="tip-text">Nenhuma conquista nesta categoria.</p>`;
+                return;
+            }
+
+            achievementsForDifficulty.forEach(ach => {
+                const achStatus = userData.achievements[ach.id] || { progress: 0, completed: false, collected: false };
+                const itemEl = document.createElement('div');
+                itemEl.className = `achievement-item ${achStatus.completed ? 'completed' : ''}`;
+
+                let progressText = '';
+                if (ach.type === 'score' || ach.type === 'noSelfCollisionScore') {
+                    progressText = `Progresso: ${achStatus.progress}/${ach.target} pontos`;
+                } else if (ach.type === 'applesEaten' || ach.type.endsWith('Apples')) {
+                    progressText = `Progresso: ${achStatus.progress}/${ach.target} maçãs`;
+                } else if (ach.type === 'gamesPlayed') {
+                    progressText = `Progresso: ${achStatus.progress}/${ach.target} partidas`;
+                } else if (ach.type === 'snakeLength') {
+                    progressText = `Progresso: ${achStatus.progress}/${ach.target} de comprimento`;
+                } else if (ach.type === 'totalCoins') {
+                    progressText = `Progresso: ${achStatus.progress}/${ach.target} moedas`;
+                }
+
+
+                let rewardText = '';
+                if (ach.reward.coins) rewardText += `S$ ${ach.reward.coins}`;
+                if (ach.reward.item) {
+                    const itemName = shopItems[ach.reward.item.type].find(item => item.id === ach.reward.item.id)?.name || 'Item Desconhecido';
+                    if (rewardText) rewardText += ' + ';
+                    rewardText += `${itemName}`;
+                }
+
+                let buttonHtml = '';
+                if (achStatus.collected) {
+                    buttonHtml = `<button class="menu-button active" disabled>Coletado</button>`;
+                } else if (achStatus.completed) {
+                    buttonHtml = `<button class="menu-button" data-achievement-id="${ach.id}">Coletar Recompensa (${rewardText})</button>`;
+                } else {
+                    buttonHtml = `<button class="menu-button" disabled>Não Completado</button>`;
+                }
+
+                itemEl.innerHTML = `
+                    <div class="achievement-item-details">
+                        <h3>${ach.name}</h3>
+                        <p>${ach.desc}</p>
+                        <p class="achievement-progress">${progressText}</p>
+                    </div>
+                    ${buttonHtml}
+                `;
+                achievementsListContainer.appendChild(itemEl);
+            });
+        }
+
+        async function handleUsernameSubmit() {
+            const newUsername = usernameInput.value.trim();
+            usernameError.textContent = '';
+            usernameError.classList.add('hidden');
+            
+            if (newUsername.length < 3 || newUsername.length > 15) {
+                usernameError.textContent = 'O nome deve ter entre 3 e 15 caracteres.';
+                usernameError.classList.remove('hidden');
+                return;
+            }
+
+            const q = query(collection(db, "users"), where("name", "==", newUsername));
+            const querySnapshot = await getDocs(q);
+
+            if (!querySnapshot.empty) {
+                usernameError.textContent = 'Este nome de usuário já existe.';
+                usernameError.classList.remove('hidden');
+            } else {
+                const user = auth.currentUser;
+                if (user) {
+                    userData.name = newUsername;
+                    userData.usernameIsSet = true;
+                    await saveUserData();
+                    userName.textContent = newUsername;
+                    showScreen(screens.start);
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            addSafeListener(buttons.login, () => {
+                signInWithPopup(auth, provider).catch(error => { console.error("Erro detalhado no login:", error); });
+            });
+            addSafeListener(buttons.logout, () => { signOut(auth).catch(error => console.error("Erro no logout:", error)); });
+            addSafeListener(buttons.start, startGame);
+            addSafeListener(buttons.shop, showShopHandler);
+            addSafeListener(buttons.achievements, showAchievementsHandler); 
+            addSafeListener(buttons.leaderboard, () => { getLeaderboard(); showScreen(screens.leaderboard); });
+            addSafeListener(buttons.options, showOptionsHandler);
+            addSafeListener(buttons.tips, showTipsHandler);
+            addSafeListener(buttons.home, () => showScreen(screens.start));
+            addSafeListener(buttons.restart, startGame);
+            addSafeListener(buttons.pause, togglePause);
+            addSafeListener(buttons.resume, togglePause);
+            addSafeListener(buttons.pauseOptions, handlePauseOptions);
+            addSafeListener(buttons.pauseHome, pauseHomeHandler);
+            addSafeListener(buttons.notificationBell, showNotificationHandler);
+            addSafeListener(buttons.collectAllRewards, collectAllRewards); // NEW: Collect All button listener
+            addSafeListener(buttons.back, () => { if(previousScreen === screens.game) { showScreen(screens.game); pauseOverlay.classList.remove('hidden'); } else { showScreen(screens.start); } });
+            addSafeListener(buttons.shopBack, () => showScreen(screens.start));
+            addSafeListener(buttons.leaderboardBack, () => showScreen(screens.start));
+            addSafeListener(buttons.tipsBack, () => showScreen(screens.start));
+            addSafeListener(buttons.notificationBack, () => showScreen(screens.start));
+            addSafeListener(buttons.achievementsBack, () => showScreen(screens.start)); 
+            addSafeListener(buttons.submitUsername, handleUsernameSubmit);
+            
+            screens.options.addEventListener('click', (e) => {
+                const controlButton = e.target.closest('[data-control]');
+                if(controlButton) {
+                    gameSettings.controlMode = controlButton.dataset.control;
+                    updateOptionButtons();
+                }
+                const ratioButton = e.target.closest('[data-ratio]');
+                if(ratioButton) {
+                    gameSettings.aspectRatio = ratioButton.dataset.ratio;
+                    updateOptionButtons();
+                }
+            });
+
+            shopTabs.addEventListener('click', (e) => { const tab = e.target.closest('.shop-tab'); if (tab) renderShop(tab.dataset.tab); });
+            shopItemsContainer.addEventListener('click', (e) => {
+                const buyButton = e.target.closest('[data-item-id]');
+                const selectButton = e.target.closest('[data-select-id]');
+                if (buyButton && !buyButton.disabled) { const { itemId, price, type } = buyButton.dataset; buyItem(itemId, parseInt(price), type); } 
+                else if (selectButton) { const { selectId, type } = selectButton.dataset; selectItem(selectId, type); }
+            });
+
+            notificationList.addEventListener('click', async (e) => {
+                const rewardButton = e.target.closest('[data-reward-id]');
+                const achievementRewardButton = e.target.closest('[data-achievement-id]');
+                if (rewardButton || achievementRewardButton) { 
+                    await collectReward(e.target);
+                }
+            });
+
+            // NEW: Event listener for achievement tabs
+            achievementsTabs.addEventListener('click', (e) => {
+                const tab = e.target.closest('.achievement-tab');
+                if (tab) renderAchievements(tab.dataset.tab);
+            });
+
+            // NEW: Event listener for collecting achievement rewards
+            achievementsListContainer.addEventListener('click', async (e) => {
+                const collectButton = e.target.closest('[data-achievement-id]');
+                if (collectButton && !collectButton.disabled) {
+                    await collectReward(collectButton); 
+                }
+            });
+
+            loadLocalData();
+            applyAllCustomizations();
+            updateOptionButtons();
+        });
+    </script>
+</body>
+</html>
