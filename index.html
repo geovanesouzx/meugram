@@ -39,7 +39,6 @@
             <svg class="w-6 h-6" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.42-4.55H24v8.51h13.04c-.57 3.02-2.31 5.48-4.78 7.18l7.73 6.02C43.82 39.75 46.98 32.9 46.98 24.55z"></path><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6.02c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path><path fill="none" d="M0 0h48v48H0z"></path></svg>
             Entrar com o Google
         </button>
-        <!-- Futuramente, aqui entrará o login com email e senha -->
     </div>
 
     <!-- CONTAINER PRINCIPAL DA APP -->
@@ -50,7 +49,11 @@
                 <svg width="24" height="24" viewBox="0 0 24 24" class="text-white"><path fill="currentColor" d="M16 17v-3H9v-4h7V7l5 5-5 5M14 2a2 2 0 0 1 2 2v2h-2V4H5v16h9v-2h2v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9z"></path></svg>
             </button>
         </header>
-        <main id="postsFeed" class="p-2 space-y-4"></main>
+        <main id="postsFeed" class="p-2 space-y-4">
+             <div id="loadingPosts" class="text-center text-slate-500 py-10">
+                <p>A carregar o feed...</p>
+            </div>
+        </main>
         <footer class="bg-black border-t border-slate-800 px-4 py-3">
             <nav class="flex justify-around items-center">
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" class="text-white"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"></path></svg>
@@ -64,7 +67,20 @@
     
     <!-- MODAL PARA NOVA PUBLICAÇÃO -->
     <div id="postModal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
-        <!-- ... (código do modal continua o mesmo) ... -->
+         <div class="bg-[#121212] p-5 rounded-xl border border-slate-800 w-full max-w-sm modal-content">
+            <form id="postForm">
+                <h2 class="text-white text-lg font-bold text-center mb-4">Nova Publicação</h2>
+                <textarea 
+                    id="postContent" 
+                    class="w-full p-3 bg-black border border-slate-700 rounded-lg text-slate-200 placeholder-slate-600 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition" 
+                    rows="4" 
+                    placeholder="Escreva uma nova publicação..."></textarea>
+                <div class="flex gap-3 mt-4">
+                    <button id="cancelPostBtn" type="button" class="w-full bg-slate-700 text-white font-bold py-2.5 px-4 rounded-lg hover:bg-slate-600 transition">Cancelar</button>
+                    <button type="submit" class="w-full bg-gradient-to-r from-pink-500 to-orange-400 text-white font-bold py-2.5 px-4 rounded-lg hover:opacity-90 transition">Publicar</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script type="module">
@@ -111,8 +127,10 @@
                 
                 document.getElementById('login-google-btn').addEventListener('click', handleGoogleLogin);
                 document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+                document.getElementById('addPostBtn').addEventListener('click', () => document.getElementById('postModal').classList.remove('hidden'));
+                document.getElementById('cancelPostBtn').addEventListener('click', () => document.getElementById('postModal').classList.add('hidden'));
+                document.getElementById('postForm').addEventListener('submit', handlePostSubmit);
 
-                // Ouve as mudanças de estado de autenticação
                 onAuthStateChanged(auth, handleAuthState);
             } catch (error) {
                 console.error("Erro fatal ao inicializar o Firebase:", error);
@@ -121,17 +139,15 @@
         
         async function handleAuthState(user) {
             if (user) {
-                // Utilizador está logado
                 userId = user.uid;
                 currentUser = user;
-                await createUserProfile(user); // Cria o perfil no DB se não existir
+                await createUserProfile(user);
                 
-                document.getElementById('user-profile-icon').innerHTML = `<img src="${user.photoURL}" class="w-full h-full rounded-full object-cover">`;
+                document.getElementById('user-profile-icon').innerHTML = `<img src="${user.photoURL}" alt="Sua foto de perfil" class="w-full h-full rounded-full object-cover">`;
                 
                 showScreen(appContainer);
-                loadPosts(); // Carrega as publicações
+                loadPosts();
             } else {
-                // Utilizador está deslogado
                 userId = null;
                 currentUser = null;
                 showScreen(loginScreen);
@@ -151,52 +167,105 @@
             const userRef = doc(db, 'users', user.uid);
             const userDoc = await getDoc(userRef);
             if (!userDoc.exists()) {
-                // Cria o documento do utilizador apenas na primeira vez
                 await setDoc(userRef, {
                     displayName: user.displayName,
                     email: user.email,
                     photoURL: user.photoURL,
                     createdAt: serverTimestamp(),
-                    bio: "" // Campo para futura edição de perfil
+                    bio: ""
                 });
             }
         }
 
         // --- 4. FUNÇÕES DE DADOS (POSTS, COMENTÁRIOS) ---
-        // Funções como loadPosts, handlePostSubmit, toggleLike, etc.
-        // Precisam de pequenas adaptações para usar as informações do perfil.
+        const postsCollectionPath = `/artifacts/${firebaseConfig.projectId}/public/data/posts`;
         
-        function renderPost(postDoc) {
-             const post = { id: postDoc.id, ...postDoc.data() };
-             // Esta função agora precisa buscar os dados do autor no 'users'
-             // para mostrar o nome e foto corretos. Por agora, vamos simplificar.
-             const authorName = post.authorName || `Anónimo_${post.authorId.substring(0, 4)}`;
-             const authorPhoto = post.authorPhotoURL || 'https://placehold.co/36x36/EFEFEF/333?text=A';
-
-            // ... (o resto do código de renderPost continua parecido)
-        }
-
         async function handlePostSubmit(e) {
-            // ...
+            e.preventDefault();
+            const postContent = document.getElementById('postContent');
+            const content = postContent.value.trim();
+            const submitButton = e.target.querySelector('button[type="submit"]');
+
             if (content && currentUser) {
-                // ...
+                submitButton.disabled = true;
+                submitButton.textContent = 'A publicar...';
                 try {
                     await addDoc(collection(db, postsCollectionPath), {
                         text: content,
                         authorId: currentUser.uid,
-                        authorName: currentUser.displayName, // GUARDAMOS O NOME
-                        authorPhotoURL: currentUser.photoURL, // GUARDAMOS A FOTO
+                        authorName: currentUser.displayName,
+                        authorPhotoURL: currentUser.photoURL,
                         createdAt: serverTimestamp(),
                         likes: [],
                         commentCount: 0
                     });
-                    // ...
-                } // ...
+                    postContent.value = '';
+                    document.getElementById('postModal').classList.add('hidden');
+                } catch (error) {
+                    console.error("Erro ao salvar a publicação: ", error);
+                } finally {
+                    submitButton.disabled = false;
+                    submitButton.textContent = 'Publicar';
+                }
             }
         }
-        // Todas as outras funções (loadPosts, toggleLike, etc.) continuam aqui...
-        // O código completo é muito extenso, então foquei em mostrar a nova estrutura de autenticação.
-        // O resto da lógica de posts e comentários pode ser inserida aqui, adaptada para usar 'currentUser'.
+
+        function loadPosts() {
+            const q = query(collection(db, postsCollectionPath), orderBy("createdAt", "desc"));
+            const postsFeed = document.getElementById('postsFeed');
+            
+            onSnapshot(q, (snapshot) => {
+                document.getElementById('loadingPosts')?.remove();
+                if (snapshot.empty && postsFeed.childElementCount === 0) {
+                    postsFeed.innerHTML = '<p class="text-center text-slate-500">Nenhuma publicação ainda.</p>';
+                } else {
+                    postsFeed.innerHTML = '';
+                    snapshot.docs.forEach(renderPost);
+                }
+            });
+        }
+
+        async function renderPost(postDoc) {
+            const post = { id: postDoc.id, ...postDoc.data() };
+            const postsFeed = document.getElementById('postsFeed');
+            const postElement = document.createElement('div');
+            postElement.className = 'bg-black border-b border-slate-800 fade-in';
+        
+            const hasLiked = post.likes?.includes(userId);
+            const likeCount = post.likes?.length || 0;
+            const postDate = post.createdAt?.toDate().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' }) || 'agora mesmo';
+
+            postElement.innerHTML = `
+                <div class="flex items-center p-3">
+                    <img src="${escapeHTML(post.authorPhotoURL)}" class="w-9 h-9 rounded-full object-cover" alt="Foto de Perfil">
+                    <p class="font-bold text-sm ml-3 text-white">${escapeHTML(post.authorName)}</p>
+                </div>
+                <div class="p-4 pt-0 text-white text-base break-words">
+                    <p>${escapeHTML(post.text)}</p>
+                </div>
+                <div class="px-3 pt-2 pb-1 flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <button class="like-button">
+                            <svg class="like-heart" width="24" height="24" viewBox="0 0 24 24" fill="${hasLiked ? '#ff0055' : 'none'}" stroke="${hasLiked ? '#ff0055' : 'currentColor'}" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                        </button>
+                        <button class="comment-button">
+                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="px-4 pb-3">
+                    <p class="font-bold text-sm text-white">${likeCount} curtida${likeCount !== 1 ? 's' : ''}</p>
+                    <p class="text-slate-400 text-xs mt-1">Publicado em ${postDate}</p>
+                </div>
+            `;
+            postsFeed.appendChild(postElement);
+        }
+
+        function escapeHTML(str) {
+            const p = document.createElement('p');
+            p.textContent = str || '';
+            return p.innerHTML.replace(/\n/g, '<br>');
+        }
     </script>
 </body>
 </html>
