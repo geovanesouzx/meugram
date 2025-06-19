@@ -116,7 +116,7 @@
         setTimeout(() => {
             splashScreen.classList.replace('fade-in', 'fade-out');
             setTimeout(() => main(), 500);
-        }, 2000);
+        }, 1500);
 
         // --- 3. LÓGICA PRINCIPAL E AUTENTICAÇÃO ---
         function main() {
@@ -134,6 +134,7 @@
                 onAuthStateChanged(auth, handleAuthState);
             } catch (error) {
                 console.error("Erro fatal ao inicializar o Firebase:", error);
+                document.body.innerHTML = `<p class="text-red-500 p-4">Erro Crítico: Não foi possível conectar ao Firebase. Verifique a configuração.</p>`;
             }
         }
         
@@ -158,8 +159,10 @@
             const provider = new GoogleAuthProvider();
             try {
                 await signInWithPopup(auth, provider);
-            } catch (error) {
+            } catch (error)
+            {
                 console.error("Erro no login com Google:", error);
+                alert("Ocorreu um erro ao tentar fazer login com o Google. Verifique se os pop-ups estão bloqueados ou tente novamente. Detalhes no console.");
             }
         }
         
@@ -197,7 +200,6 @@
                         authorPhotoURL: currentUser.photoURL,
                         createdAt: serverTimestamp(),
                         likes: [],
-                        commentCount: 0
                     });
                     postContent.value = '';
                     document.getElementById('postModal').classList.add('hidden');
@@ -215,16 +217,18 @@
             const postsFeed = document.getElementById('postsFeed');
             
             onSnapshot(q, (snapshot) => {
-                document.getElementById('loadingPosts')?.remove();
+                const loadingEl = document.getElementById('loadingPosts');
+                if(loadingEl) loadingEl.remove();
+
                 if (snapshot.empty && postsFeed.childElementCount === 0) {
-                    postsFeed.innerHTML = '<p class="text-center text-slate-500">Nenhuma publicação ainda.</p>';
+                    postsFeed.innerHTML = '<p class="text-center text-slate-500">Nenhuma publicação ainda. Seja o primeiro!</p>';
                 } else {
                     postsFeed.innerHTML = '';
                     snapshot.docs.forEach(renderPost);
                 }
             });
         }
-
+        
         async function renderPost(postDoc) {
             const post = { id: postDoc.id, ...postDoc.data() };
             const postsFeed = document.getElementById('postsFeed');
@@ -237,7 +241,7 @@
 
             postElement.innerHTML = `
                 <div class="flex items-center p-3">
-                    <img src="${escapeHTML(post.authorPhotoURL)}" class="w-9 h-9 rounded-full object-cover" alt="Foto de Perfil">
+                    <img src="${escapeHTML(post.authorPhotoURL)}" onerror="this.src='https://placehold.co/36x36/EFEFEF/333?text=?'" class="w-9 h-9 rounded-full object-cover" alt="Foto de Perfil">
                     <p class="font-bold text-sm ml-3 text-white">${escapeHTML(post.authorName)}</p>
                 </div>
                 <div class="p-4 pt-0 text-white text-base break-words">
@@ -257,10 +261,90 @@
                     <p class="font-bold text-sm text-white">${likeCount} curtida${likeCount !== 1 ? 's' : ''}</p>
                     <p class="text-slate-400 text-xs mt-1">Publicado em ${postDate}</p>
                 </div>
+                 <div id="comments-section-${post.id}" class="hidden pt-2 border-t border-slate-800 mt-2"></div>
             `;
+            
+            postElement.querySelector('.like-button').addEventListener('click', () => toggleLike(post.id));
+            postElement.querySelector('.comment-button').addEventListener('click', () => toggleComments(post.id));
+
             postsFeed.appendChild(postElement);
         }
 
+        async function toggleLike(postId) {
+            if (!userId) return;
+            const postRef = doc(db, postsCollectionPath, postId);
+            const postDoc = await getDoc(postRef);
+
+            if (postDoc.exists()) {
+                const likes = postDoc.data().likes || [];
+                if (likes.includes(userId)) {
+                    await updateDoc(postRef, { likes: arrayRemove(userId) });
+                } else {
+                    await updateDoc(postRef, { likes: arrayUnion(userId) });
+                }
+            }
+        }
+
+        function toggleComments(postId) {
+            const commentsSection = document.getElementById(`comments-section-${postId}`);
+            if(!commentsSection) return;
+
+            const isHidden = commentsSection.classList.contains('hidden');
+            if(isHidden){
+                commentsSection.classList.remove('hidden');
+                if(!commentsSection.hasAttribute('data-loaded')){
+                    loadComments(postId, commentsSection);
+                    commentsSection.setAttribute('data-loaded', 'true');
+                }
+            } else {
+                commentsSection.classList.add('hidden');
+            }
+        }
+
+        function loadComments(postId, container) {
+            const q = query(collection(db, postsCollectionPath, postId, 'comments'), orderBy('createdAt', 'asc'));
+
+            onSnapshot(q, (snapshot) => {
+                let commentsHTML = snapshot.empty ? '<p class="text-slate-500 text-sm px-4 pb-2">Nenhum comentário ainda.</p>' : '';
+                 snapshot.forEach(doc => {
+                     const comment = doc.data();
+                     const author = comment.authorId === userId ? 'Você' : escapeHTML(comment.authorName);
+                     commentsHTML += `<div class="px-4 pb-2 text-sm flex gap-2"><strong class="text-white">${author}:</strong><p class="text-slate-300">${escapeHTML(comment.text)}</p></div>`;
+                 });
+                 
+                 container.innerHTML = commentsHTML + `
+                    <form class="comment-form p-2 border-t border-slate-800 flex gap-2">
+                        <input type="text" placeholder="Adicione um comentário..." class="bg-black text-white text-sm w-full focus:outline-none">
+                        <button type="submit" class="text-cyan-400 font-semibold text-sm">Publicar</button>
+                    </form>
+                 `;
+                 container.querySelector('.comment-form').addEventListener('submit', (e) => handleCommentSubmit(e, postId));
+            });
+        }
+        
+        async function handleCommentSubmit(e, postId) {
+            e.preventDefault();
+            const input = e.target.querySelector('input');
+            const commentText = input.value.trim();
+            if(!commentText || !currentUser) return;
+            
+            input.disabled = true;
+            try {
+                const commentsColRef = collection(db, postsCollectionPath, postId, 'comments');
+                await addDoc(commentsColRef, {
+                    text: commentText,
+                    authorId: currentUser.uid,
+                    authorName: currentUser.displayName,
+                    createdAt: serverTimestamp()
+                });
+                input.value = '';
+            } catch(error) {
+                console.error("Erro ao adicionar comentário:", error);
+            } finally {
+                input.disabled = false;
+            }
+        }
+        
         function escapeHTML(str) {
             const p = document.createElement('p');
             p.textContent = str || '';
@@ -269,3 +353,22 @@
     </script>
 </body>
 </html>
+```
+
+### Sobre o Login com o Google
+
+Se o login com o Google ainda não funcionar depois de atualizar o código, a causa é quase sempre uma destas duas coisas (que **precisam ser feitas no site do Firebase**):
+
+1.  **Login com Google não está ativado:**
+    * Vá à [Consola do Firebase](https://console.firebase.google.com/).
+    * Selecione o seu projeto (`meugram-ebbaa`).
+    * No menu à esquerda, vá a **Build > Authentication**.
+    * Clique no separador **Sign-in method**.
+    * Na lista, clique em **Google**, ative-o e certifique-se de que seleciona um email de suporte do projeto. Clique em **Guardar**.
+
+2.  **O seu domínio não está autorizado:**
+    * Ainda em **Authentication**, no separador **Settings**, vá para a secção **Domínios autorizados**.
+    * Clique em **Adicionar domínio**.
+    * Se estiver a usar o GitHub Pages, o domínio a adicionar será `oseunome.github.io` (substitua "oseunome" pelo seu nome de utilizador do GitHub).
+
+Depois de verificar estes dois pontos no Firebase e atualizar o seu `index.html` com o código acima, a aplicação deverá funcionar por comple
