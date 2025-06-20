@@ -1,360 +1,320 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MuralGram</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TYFYEX - Filmes e Séries</title>
+    
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
-    <link href="https://fonts.googleapis.com/css?family=Grand+Hotel" rel="stylesheet">
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Estilos personalizados -->
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #000; color: #e5e7eb; }
-        .app-container, .screen { height: 100vh; display: flex; flex-direction: column; }
-        main { flex-grow: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-        header, footer { flex-shrink: 0; }
-        main::-webkit-scrollbar { width: 5px; }
-        main::-webkit-scrollbar-track { background: #1a1a1a; }
-        main::-webkit-scrollbar-thumb { background: #4a4a4a; border-radius: 4px; }
-        .fade-in { animation: fadeIn 0.5s ease-in-out forwards; }
-        .fade-out { animation: fadeOut 0.5s ease-in-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
-        .modal-content { animation: slideUp 0.3s ease-out; }
-        @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .like-heart { transition: transform 0.2s ease, color 0.2s; }
-        .like-heart:active { transform: scale(1.25); }
+        /* Define a fonte Inter como padrão */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Efeito de gradiente para o overlay do poster */
+        .poster-overlay::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+            background: linear-gradient(to top, rgba(17, 24, 39, 1), rgba(17, 24, 39, 0));
+        }
+        /* Estilos para a janela do player (modal) */
+        .modal {
+            transition: opacity 0.3s ease;
+        }
+        .modal-content {
+            transition: transform 0.3s ease;
+        }
     </style>
 </head>
-<body class="overflow-hidden">
+<body class="bg-gray-900 text-white">
 
-    <!-- TELA DE SPLASH/ENTRADA -->
-    <div id="splash-screen" class="screen items-center justify-center bg-black text-white fade-in">
-        <h1 class="text-6xl" style="font-family: 'Grand Hotel', cursive;">MuralGram</h1>
-        <p class="mt-4 text-slate-400">A sua nova rede social.</p>
-    </div>
-
-    <!-- TELA DE LOGIN -->
-    <div id="login-screen" class="hidden screen items-center justify-center bg-black p-8 text-center">
-        <h1 class="text-5xl text-white mb-4" style="font-family: 'Grand Hotel', cursive;">Bem-vindo!</h1>
-        <p class="text-slate-400 mb-10 max-w-sm">Faça login para continuar e partilhar os seus momentos com a comunidade.</p>
-        <button id="login-google-btn" class="bg-white text-black font-semibold py-3 px-6 rounded-lg flex items-center gap-3 transition-transform hover:scale-105">
-            <svg class="w-6 h-6" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.42-4.55H24v8.51h13.04c-.57 3.02-2.31 5.48-4.78 7.18l7.73 6.02C43.82 39.75 46.98 32.9 46.98 24.55z"></path><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6.02c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path><path fill="none" d="M0 0h48v48H0z"></path></svg>
-            Entrar com o Google
-        </button>
-    </div>
-
-    <!-- CONTAINER PRINCIPAL DA APP -->
-    <div id="app-container" class="hidden w-full max-w-md mx-auto bg-black app-container">
-        <header class="bg-black border-b border-slate-800 px-4 py-3 flex justify-between items-center">
-            <h1 class="text-3xl text-white" style="font-family: 'Grand Hotel', cursive;">MuralGram</h1>
-            <button id="logout-btn" title="Terminar Sessão">
-                <svg width="24" height="24" viewBox="0 0 24 24" class="text-white"><path fill="currentColor" d="M16 17v-3H9v-4h7V7l5 5-5 5M14 2a2 2 0 0 1 2 2v2h-2V4H5v16h9v-2h2v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9z"></path></svg>
-            </button>
-        </header>
-        <main id="postsFeed" class="p-0 sm:p-2 space-y-4">
-             <div id="loadingPosts" class="text-center text-slate-500 py-10">
-                <p>A carregar o feed...</p>
-            </div>
-        </main>
-        <footer class="bg-black border-t border-slate-800 px-4 py-3">
-            <nav class="flex justify-around items-center">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" class="text-white"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"></path></svg>
-                <button id="addPostBtn">
-                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
-                </button>
-                <div id="user-profile-icon" class="w-7 h-7 rounded-full bg-slate-700"></div>
-            </nav>
-        </footer>
-    </div>
-    
-    <!-- MODAL PARA NOVA PUBLICAÇÃO -->
-    <div id="postModal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
-         <div class="bg-[#121212] p-5 rounded-xl border border-slate-800 w-full max-w-sm modal-content">
-            <form id="postForm">
-                <h2 class="text-white text-lg font-bold text-center mb-4">Nova Publicação</h2>
-                <textarea 
-                    id="postContent" 
-                    class="w-full p-3 bg-black border border-slate-700 rounded-lg text-slate-200 placeholder-slate-600 focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition" 
-                    rows="4" 
-                    placeholder="Escreva uma nova publicação..."></textarea>
-                <div class="flex gap-3 mt-4">
-                    <button id="cancelPostBtn" type="button" class="w-full bg-slate-700 text-white font-bold py-2.5 px-4 rounded-lg hover:bg-slate-600 transition">Cancelar</button>
-                    <button type="submit" class="w-full bg-gradient-to-r from-pink-500 to-orange-400 text-white font-bold py-2.5 px-4 rounded-lg hover:opacity-90 transition">Publicar</button>
+    <!-- Cabeçalho -->
+    <header class="bg-gray-900/80 backdrop-blur-sm fixed top-0 left-0 right-0 z-50">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo -->
+                <div class="flex-shrink-0">
+                    <a href="#" class="text-2xl font-bold text-red-600">TYFYEX</a>
                 </div>
-            </form>
-        </div>
-    </div>
-
-    <script type="module">
-        // Importações do Firebase
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, getDoc, setDoc, doc, collection, addDoc, query, onSnapshot, serverTimestamp, updateDoc, arrayUnion, arrayRemove, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // --- 1. CONFIGURAÇÃO E INICIALIZAÇÃO ---
-        const firebaseConfig = {
-          apiKey: "AIzaSyC14HkpWvK1IT9Y4YfvIsWuu8r0ZIhU0Ow",
-          authDomain: "meugram-ebbaa.firebaseapp.com",
-          projectId: "meugram-ebbaa",
-          storageBucket: "meugram-ebbaa.firebasestorage.app",
-          messagingSenderId: "299247980409",
-          appId: "1:299247980409:web:cb11ac7629f146ad5829a8"
-        };
-        
-        let app, auth, db, userId, currentUser;
-
-        const splashScreen = document.getElementById('splash-screen');
-        const loginScreen = document.getElementById('login-screen');
-        const appContainer = document.getElementById('app-container');
-
-        // --- 2. LÓGICA DE NAVEGAÇÃO E ESTADO DA UI ---
-        function showScreen(screen) {
-            splashScreen.classList.add('hidden');
-            loginScreen.classList.add('hidden');
-            appContainer.classList.add('hidden');
-            screen.classList.remove('hidden');
-        }
-
-        setTimeout(() => {
-            splashScreen.classList.replace('fade-in', 'fade-out');
-            setTimeout(() => main(), 500);
-        }, 1500);
-
-        // --- 3. LÓGICA PRINCIPAL E AUTENTICAÇÃO ---
-        function main() {
-            try {
-                app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
                 
-                document.getElementById('login-google-btn').addEventListener('click', handleGoogleLogin);
-                document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
-                document.getElementById('addPostBtn').addEventListener('click', () => document.getElementById('postModal').classList.remove('hidden'));
-                document.getElementById('cancelPostBtn').addEventListener('click', () => document.getElementById('postModal').classList.add('hidden'));
-                document.getElementById('postForm').addEventListener('submit', handlePostSubmit);
-
-                onAuthStateChanged(auth, handleAuthState);
-            } catch (error) {
-                console.error("Erro fatal ao inicializar o Firebase:", error);
-                document.body.innerHTML = `<p class="text-red-500 p-4">Erro Crítico: Não foi possível conectar ao Firebase. Verifique a configuração.</p>`;
-            }
-        }
-        
-        async function handleAuthState(user) {
-            if (user) {
-                userId = user.uid;
-                currentUser = user;
-                await createUserProfile(user);
+                <!-- Navegação Principal -->
+                <nav class="hidden md:flex items-center space-x-8">
+                    <a href="#" class="text-gray-300 hover:text-white transition duration-300">Início</a>
+                    <a href="#" class="text-gray-300 hover:text-white transition duration-300">Séries</a>
+                    <a href="#" class="text-gray-300 hover:text-white transition duration-300">Filmes</a>
+                    <a href="#" class="text-gray-300 hover:text-white transition duration-300">Minha Lista</a>
+                </nav>
                 
-                document.getElementById('user-profile-icon').innerHTML = `<img src="${user.photoURL}" alt="Sua foto de perfil" class="w-full h-full rounded-full object-cover">`;
-                
-                showScreen(appContainer);
-                loadPosts();
-            } else {
-                userId = null;
-                currentUser = null;
-                showScreen(loginScreen);
-            }
-        }
-
-        async function handleGoogleLogin() {
-            const provider = new GoogleAuthProvider();
-            try {
-                await signInWithPopup(auth, provider);
-            } catch (error) {
-                console.error("Erro no login com Google:", error);
-                alert("Ocorreu um erro ao tentar fazer login com o Google. Verifique se os pop-ups estão bloqueados ou tente novamente. Detalhes no console.");
-            }
-        }
-        
-        async function createUserProfile(user) {
-            const userRef = doc(db, 'users', user.uid);
-            const userDoc = await getDoc(userRef);
-            if (!userDoc.exists()) {
-                await setDoc(userRef, {
-                    displayName: user.displayName,
-                    email: user.email,
-                    photoURL: user.photoURL,
-                    createdAt: serverTimestamp(),
-                    bio: ""
-                });
-            }
-        }
-
-        // --- 4. FUNÇÕES DE DADOS (POSTS, COMENTÁRIOS) ---
-        const postsCollectionPath = `/artifacts/${firebaseConfig.projectId}/public/data/posts`;
-        
-        async function handlePostSubmit(e) {
-            e.preventDefault();
-            const postContent = document.getElementById('postContent');
-            const content = postContent.value.trim();
-            const submitButton = e.target.querySelector('button[type="submit"]');
-
-            if (content && currentUser) {
-                submitButton.disabled = true;
-                submitButton.textContent = 'A publicar...';
-                try {
-                    await addDoc(collection(db, postsCollectionPath), {
-                        text: content,
-                        authorId: currentUser.uid,
-                        authorName: currentUser.displayName,
-                        authorPhotoURL: currentUser.photoURL,
-                        createdAt: serverTimestamp(),
-                        likes: [],
-                    });
-                    postContent.value = '';
-                    document.getElementById('postModal').classList.add('hidden');
-                } catch (error) {
-                    console.error("Erro ao salvar a publicação: ", error);
-                } finally {
-                    submitButton.disabled = false;
-                    submitButton.textContent = 'Publicar';
-                }
-            }
-        }
-
-        function loadPosts() {
-            const q = query(collection(db, postsCollectionPath), orderBy("createdAt", "desc"));
-            const postsFeed = document.getElementById('postsFeed');
-            
-            onSnapshot(q, (snapshot) => {
-                const loadingEl = document.getElementById('loadingPosts');
-                if(loadingEl) loadingEl.remove();
-
-                if (snapshot.empty && postsFeed.childElementCount === 0) {
-                    postsFeed.innerHTML = '<p class="text-center text-slate-500">Nenhuma publicação ainda. Seja o primeiro!</p>';
-                } else {
-                    postsFeed.innerHTML = '';
-                    snapshot.docs.forEach(renderPost);
-                }
-            });
-        }
-        
-        function renderPost(postDoc) {
-            const post = { id: postDoc.id, ...postDoc.data() };
-            const postsFeed = document.getElementById('postsFeed');
-            const postElement = document.createElement('div');
-            postElement.className = 'bg-black sm:rounded-xl border-b sm:border border-slate-800 fade-in';
-        
-            const hasLiked = post.likes?.includes(userId);
-            const likeCount = post.likes?.length || 0;
-            const postDate = post.createdAt?.toDate().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' }) || 'agora mesmo';
-
-            postElement.innerHTML = `
-                <div class="flex items-center p-3">
-                    <img src="${escapeHTML(post.authorPhotoURL)}" onerror="this.src='https://placehold.co/36x36/EFEFEF/333?text=?'" class="w-9 h-9 rounded-full object-cover" alt="Foto de Perfil">
-                    <p class="font-bold text-sm ml-3 text-white">${escapeHTML(post.authorName)}</p>
-                </div>
-                <div class="p-4 pt-0 text-white text-base break-words">
-                    <p>${escapeHTML(post.text)}</p>
-                </div>
-                <div class="px-3 py-2 flex items-center justify-between">
-                    <div class="flex items-center gap-4">
-                        <button class="like-button">
-                            <svg class="like-heart" width="24" height="24" viewBox="0 0 24 24" fill="${hasLiked ? '#ff0055' : 'none'}" stroke="${hasLiked ? '#ff0055' : 'currentColor'}" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
-                        </button>
-                        <button class="comment-button">
-                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                        </button>
-                        <button class="share-button">
-                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                        </button>
+                <!-- Ícones de Ação -->
+                <div class="flex items-center space-x-4">
+                    <button class="text-gray-300 hover:text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </button>
+                    <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-sm font-bold">
+                        T
                     </div>
                 </div>
-                <div class="px-4 pb-3">
-                    <p class="font-bold text-sm text-white">${likeCount} curtida${likeCount !== 1 ? 's' : ''}</p>
-                    <p class="text-slate-400 text-xs mt-1">Publicado em ${postDate}</p>
+            </div>
+        </div>
+    </header>
+
+    <main class="pt-16">
+        <!-- Seção Herói (Destaque Principal) -->
+        <section class="relative h-[60vh] md:h-[80vh] flex items-center justify-center text-center">
+            <div class="absolute inset-0">
+                <img src="https://placehold.co/1600x900/000000/FFFFFF?text=Filme+em+Destaque" 
+                     onerror="this.onerror=null;this.src='https://placehold.co/1600x900/111827/FFFFFF?text=Erro+ao+carregar+imagem';"
+                     alt="Filme em destaque" 
+                     class="w-full h-full object-cover opacity-40">
+                <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-transparent"></div>
+            </div>
+            <div class="relative z-10 p-4">
+                <h1 class="text-4xl md:text-6xl font-extrabold mb-4">A Lenda do Cavaleiro Estelar</h1>
+                <p class="max-w-2xl mx-auto text-gray-300 md:text-lg mb-8">
+                    Numa galáxia distante, um herói improvável deve se levantar para salvar o universo das garras de um tirano intergaláctico.
+                </p>
+                <div class="flex justify-center space-x-4">
+                    <button id="play-button" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg flex items-center transition duration-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+                        </svg>
+                        Assistir Agora
+                    </button>
+                    <button class="bg-gray-700/50 hover:bg-gray-700 text-white font-bold py-3 px-8 rounded-lg transition duration-300 backdrop-blur-sm">
+                        Mais Informações
+                    </button>
                 </div>
-                 <div id="comments-section-${post.id}" class="hidden pt-2 border-t border-slate-800 mt-2"></div>
-            `;
-            
-            postElement.querySelector('.like-button').addEventListener('click', () => toggleLike(post.id));
-            postElement.querySelector('.comment-button').addEventListener('click', () => toggleComments(post.id));
-            postElement.querySelector('.share-button').addEventListener('click', () => alert('Funcionalidade de partilha a ser implementada!'));
+            </div>
+        </section>
 
-            postsFeed.appendChild(postElement);
-        }
+        <!-- Seções de Conteúdo -->
+        <div class="space-y-12 py-12 px-4 sm:px-6 lg:px-8">
+            <!-- Filmes Populares -->
+            <div>
+                <h2 class="text-2xl font-bold mb-4">Filmes Populares</h2>
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                    <!-- Cards de Filme -->
+                    <div class="group relative rounded-lg overflow-hidden transition-transform duration-300 ease-in-out transform hover:scale-105 hover:z-10 cursor-pointer">
+                        <img src="https://placehold.co/300x450/1f2937/FFFFFF?text=Capa+Filme+1" onerror="this.onerror=null;this.src='https://placehold.co/300x450/111827/FFFFFF?text=Erro';" alt="Capa do Filme 1" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-2 text-center">
+                            <h3 class="font-bold">O Código Perdido</h3>
+                        </div>
+                    </div>
+                    <div class="group relative rounded-lg overflow-hidden transition-transform duration-300 ease-in-out transform hover:scale-105 hover:z-10 cursor-pointer">
+                        <img src="https://placehold.co/300x450/1f2937/FFFFFF?text=Capa+Filme+2" onerror="this.onerror=null;this.src='https://placehold.co/300x450/111827/FFFFFF?text=Erro';" alt="Capa do Filme 2" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-2 text-center">
+                            <h3 class="font-bold">A Fronteira Final</h3>
+                        </div>
+                    </div>
+                     <div class="group relative rounded-lg overflow-hidden transition-transform duration-300 ease-in-out transform hover:scale-105 hover:z-10 cursor-pointer">
+                        <img src="https://placehold.co/300x450/1f2937/FFFFFF?text=Capa+Filme+3" onerror="this.onerror=null;this.src='https://placehold.co/300x450/111827/FFFFFF?text=Erro';" alt="Capa do Filme 3" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-2 text-center">
+                            <h3 class="font-bold">Crônicas Urbanas</h3>
+                        </div>
+                    </div>
+                     <div class="group relative rounded-lg overflow-hidden transition-transform duration-300 ease-in-out transform hover:scale-105 hover:z-10 cursor-pointer">
+                        <img src="https://placehold.co/300x450/1f2937/FFFFFF?text=Capa+Filme+4" onerror="this.onerror=null;this.src='https://placehold.co/300x450/111827/FFFFFF?text=Erro';" alt="Capa do Filme 4" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-2 text-center">
+                            <h3 class="font-bold">Marte Vermelho</h3>
+                        </div>
+                    </div>
+                     <div class="group relative rounded-lg overflow-hidden transition-transform duration-300 ease-in-out transform hover:scale-105 hover:z-10 cursor-pointer">
+                        <img src="https://placehold.co/300x450/1f2937/FFFFFF?text=Capa+Filme+5" onerror="this.onerror=null;this.src='https://placehold.co/300x450/111827/FFFFFF?text=Erro';" alt="Capa do Filme 5" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-2 text-center">
+                            <h3 class="font-bold">Projeto Gênesis</h3>
+                        </div>
+                    </div>
+                     <div class="group relative rounded-lg overflow-hidden transition-transform duration-300 ease-in-out transform hover:scale-105 hover:z-10 cursor-pointer">
+                        <img src="https://placehold.co/300x450/1f2937/FFFFFF?text=Capa+Filme+6" onerror="this.onerror=null;this.src='https://placehold.co/300x450/111827/FFFFFF?text=Erro';" alt="Capa do Filme 6" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-2 text-center">
+                            <h3 class="font-bold">A Última Viagem</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Séries em Alta -->
+            <div>
+                <h2 class="text-2xl font-bold mb-4">Séries em Alta</h2>
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                    <!-- Cards de Série -->
+                    <div class="group relative rounded-lg overflow-hidden transition-transform duration-300 ease-in-out transform hover:scale-105 hover:z-10 cursor-pointer">
+                        <img src="https://placehold.co/300x450/1f2937/FFFFFF?text=Capa+Série+1" onerror="this.onerror=null;this.src='https://placehold.co/300x450/111827/FFFFFF?text=Erro';" alt="Capa da Série 1" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-2 text-center">
+                            <h3 class="font-bold">Dinastia de Papel</h3>
+                        </div>
+                    </div>
+                    <div class="group relative rounded-lg overflow-hidden transition-transform duration-300 ease-in-out transform hover:scale-105 hover:z-10 cursor-pointer">
+                        <img src="https://placehold.co/300x450/1f2937/FFFFFF?text=Capa+Série+2" onerror="this.onerror=null;this.src='https://placehold.co/300x450/111827/FFFFFF?text=Erro';" alt="Capa da Série 2" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-2 text-center">
+                            <h3 class="font-bold">Os Observadores</h3>
+                        </div>
+                    </div>
+                    <div class="group relative rounded-lg overflow-hidden transition-transform duration-300 ease-in-out transform hover:scale-105 hover:z-10 cursor-pointer">
+                        <img src="https://placehold.co/300x450/1f2937/FFFFFF?text=Capa+Série+3" onerror="this.onerror=null;this.src='https://placehold.co/300x450/111827/FFFFFF?text=Erro';" alt="Capa da Série 3" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-2 text-center">
+                            <h3 class="font-bold">Vale do Silício</h3>
+                        </div>
+                    </div>
+                    <div class="group relative rounded-lg overflow-hidden transition-transform duration-300 ease-in-out transform hover:scale-105 hover:z-10 cursor-pointer">
+                        <img src="https://placehold.co/300x450/1f2937/FFFFFF?text=Capa+Série+4" onerror="this.onerror=null;this.src='https://placehold.co/300x450/111827/FFFFFF?text=Erro';" alt="Capa da Série 4" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-2 text-center">
+                            <h3 class="font-bold">Horizonte Zero</h3>
+                        </div>
+                    </div>
+                    <div class="group relative rounded-lg overflow-hidden transition-transform duration-300 ease-in-out transform hover:scale-105 hover:z-10 cursor-pointer">
+                        <img src="https://placehold.co/300x450/1f2937/FFFFFF?text=Capa+Série+5" onerror="this.onerror=null;this.src='https://placehold.co/300x450/111827/FFFFFF?text=Erro';" alt="Capa da Série 5" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-2 text-center">
+                            <h3 class="font-bold">A Coroa Quebrada</h3>
+                        </div>
+                    </div>
+                    <div class="group relative rounded-lg overflow-hidden transition-transform duration-300 ease-in-out transform hover:scale-105 hover:z-10 cursor-pointer">
+                        <img src="https://placehold.co/300x450/1f2937/FFFFFF?text=Capa+Série+6" onerror="this.onerror=null;this.src='https://placehold.co/300x450/111827/FFFFFF?text=Erro';" alt="Capa da Série 6" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-2 text-center">
+                            <h3 class="font-bold">Legado</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
 
-        async function toggleLike(postId) {
-            if (!userId) return;
-            const postRef = doc(db, postsCollectionPath, postId);
-            const postDoc = await getDoc(postRef);
+    <!-- Rodapé -->
+    <footer class="bg-gray-900 border-t border-gray-800">
+        <div class="container mx-auto px-6 py-8">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-gray-400 font-semibold mb-3">Empresa</h3>
+                    <ul>
+                        <li><a href="#" class="text-gray-500 hover:text-white">Sobre nós</a></li>
+                        <li><a href="#" class="text-gray-500 hover:text-white">Carreiras</a></li>
+                        <li><a href="#" class="text-gray-500 hover:text-white">Imprensa</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-gray-400 font-semibold mb-3">Conta</h3>
+                    <ul>
+                        <li><a href="#" class="text-gray-500 hover:text-white">Gerenciar conta</a></li>
+                        <li><a href="#" class="text-gray-500 hover:text-white">Ajuda</a></li>
+                        <li><a href="#" class="text-gray-500 hover:text-white">Resgatar cartão</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-gray-400 font-semibold mb-3">Legal</h3>
+                    <ul>
+                        <li><a href="#" class="text-gray-500 hover:text-white">Termos de Uso</a></li>
+                        <li><a href="#" class="text-gray-500 hover:text-white">Privacidade</a></li>
+                        <li><a href="#" class="text-gray-500 hover:text-white">Avisos Legais</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-gray-400 font-semibold mb-3">Redes Sociais</h3>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-500 hover:text-white">
+                            <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v2.385z"/></svg>
+                        </a>
+                        <a href="#" class="text-gray-500 hover:text-white">
+                             <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                        </a>
+                        <a href="#" class="text-gray-500 hover:text-white">
+                            <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.85s-.011 3.584-.069 4.85c-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07s-3.584-.012-4.85-.07c-3.252-.148-4.771-1.691-4.919-4.919-.058-1.265-.069-1.645-.069-4.85s.011-3.584.069-4.85c.149-3.225 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.85-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948s.014 3.667.072 4.947c.2 4.358 2.618 6.78 6.98 6.98 1.281.059 1.689.073 4.948.073s3.667-.014 4.947-.072c4.358-.2 6.78-2.618 6.98-6.98.059-1.281.073-1.689.073-4.948s-.014-3.667-.072-4.947c-.2-4.358-2.618-6.78-6.98-6.98-1.281-.059-1.689-.073-4.948-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.162 6.162 6.162 6.162-2.759 6.162-6.162-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4s1.791-4 4-4 4 1.79 4 4-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44 1.441-.645 1.441-1.44-.645-1.44-1.441-1.44z"/></svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-8 pt-8 border-t border-gray-800 text-center text-gray-500">
+                &copy; 2024 TYFYEX. Todos os direitos reservados.
+            </div>
+        </div>
+    </footer>
 
-            if (postDoc.exists()) {
-                const likes = postDoc.data().likes || [];
-                if (likes.includes(userId)) {
-                    await updateDoc(postRef, { likes: arrayRemove(userId) });
-                } else {
-                    await updateDoc(postRef, { likes: arrayUnion(userId) });
-                }
-            }
-        }
-
-        function toggleComments(postId) {
-            const commentsSection = document.getElementById(`comments-section-${postId}`);
-            if(!commentsSection) return;
-
-            const isHidden = commentsSection.classList.contains('hidden');
-            if(isHidden){
-                commentsSection.classList.remove('hidden');
-                if(!commentsSection.hasAttribute('data-loaded')){
-                    loadComments(postId, commentsSection);
-                    commentsSection.setAttribute('data-loaded', 'true');
-                }
-            } else {
-                commentsSection.classList.add('hidden');
-            }
-        }
-
-        function loadComments(postId, container) {
-            const q = query(collection(db, postsCollectionPath, postId, 'comments'), orderBy('createdAt', 'asc'));
-
-            onSnapshot(q, (snapshot) => {
-                let commentsHTML = snapshot.empty ? '<p class="text-slate-500 text-sm px-4 pb-2">Nenhum comentário ainda.</p>' : '';
-                 snapshot.forEach(doc => {
-                     const comment = doc.data();
-                     const author = comment.authorId === userId ? 'Você' : escapeHTML(comment.authorName);
-                     commentsHTML += `<div class="px-4 pb-2 text-sm flex gap-2"><strong class="text-white">${author}:</strong><p class="text-slate-300">${escapeHTML(comment.text)}</p></div>`;
-                 });
-                 
-                 container.innerHTML = commentsHTML + `
-                    <form class="comment-form p-2 border-t border-slate-800 flex gap-2">
-                        <input type="text" placeholder="Adicione um comentário..." class="bg-black text-white text-sm w-full focus:outline-none">
-                        <button type="submit" class="text-cyan-400 font-semibold text-sm">Publicar</button>
-                    </form>
-                 `;
-                 container.querySelector('.comment-form').addEventListener('submit', (e) => handleCommentSubmit(e, postId));
-            });
-        }
+    <!-- Janela do Player (Modal) -->
+    <div id="player-modal" class="modal hidden fixed inset-0 bg-black bg-opacity-75 z-50 items-center justify-center p-4 opacity-0">
+        <div class="modal-content bg-gray-900 rounded-lg w-full max-w-4xl transform scale-95">
+            <div class="flex justify-end p-2">
+                <button id="close-modal" class="text-white hover:text-red-500 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="aspect-w-16 aspect-h-9">
+                <!-- Iframe do Dailymotion -->
+                <iframe id="dailymotion-player"
+                        frameborder="0" 
+                        type="text/html" 
+                        src="https://www.dailymotion.com/embed/video/k24m8tRPxGSGLwDhOmU?autoplay=0"
+                        width="100%" 
+                        height="100%" 
+                        allowfullscreen 
+                        allow="autoplay">
+                </iframe>
+            </div>
+        </div>
+    </div>
+    
+    <!-- JavaScript para controlar o modal -->
+    <script>
+        // Seleciona os elementos do DOM
+        const playButton = document.getElementById('play-button');
+        const playerModal = document.getElementById('player-modal');
+        const closeModalButton = document.getElementById('close-modal');
+        const dailymotionPlayer = document.getElementById('dailymotion-player');
         
-        async function handleCommentSubmit(e, postId) {
-            e.preventDefault();
-            const input = e.target.querySelector('input');
-            const commentText = input.value.trim();
-            if(!commentText || !currentUser) return;
-            
-            input.disabled = true;
-            try {
-                const commentsColRef = collection(db, postsCollectionPath, postId, 'comments');
-                await addDoc(commentsColRef, {
-                    text: commentText,
-                    authorId: currentUser.uid,
-                    authorName: currentUser.displayName,
-                    createdAt: serverTimestamp()
-                });
-                input.value = '';
-            } catch(error) {
-                console.error("Erro ao adicionar comentário:", error);
-            } finally {
-                input.disabled = false;
-            }
-        }
+        // Guarda a URL original do player
+        const originalSrc = dailymotionPlayer.src;
+
+        // Função para abrir o modal
+        const openModal = () => {
+            playerModal.classList.remove('hidden');
+            playerModal.classList.add('flex');
+            // Força um reflow para a transição funcionar
+            void playerModal.offsetWidth; 
+            playerModal.classList.remove('opacity-0');
+            playerModal.querySelector('.modal-content').classList.remove('scale-95');
+        };
+
+        // Função para fechar o modal
+        const closeModal = () => {
+            playerModal.classList.add('opacity-0');
+            playerModal.querySelector('.modal-content').classList.add('scale-95');
+            // Para a reprodução do vídeo ao fechar o modal
+            dailymotionPlayer.src = dailymotionPlayer.src.replace("&autoplay=1", "");
+            setTimeout(() => {
+                playerModal.classList.add('hidden');
+                playerModal.classList.remove('flex');
+            }, 300); // Espera a transição terminar
+        };
         
-        function escapeHTML(str) {
-            const p = document.createElement('p');
-            p.textContent = str || '';
-            return p.innerHTML.replace(/\n/g, '<br>');
-        }
+        // Adiciona os eventos de clique
+        playButton.addEventListener('click', () => {
+             // Adiciona autoplay=1 ao abrir
+            if (!dailymotionPlayer.src.includes('autoplay=1')) {
+                 dailymotionPlayer.src += "&autoplay=1";
+            }
+            openModal();
+        });
+        closeModalButton.addEventListener('click', closeModal);
+
+        // Fecha o modal ao clicar fora da área do conteúdo
+        playerModal.addEventListener('click', (event) => {
+            if (event.target === playerModal) {
+                closeModal();
+            }
+        });
     </script>
 </body>
 </html>
